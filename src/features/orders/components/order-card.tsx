@@ -23,7 +23,7 @@ export function OrderCard({ order }: OrderCardProps) {
     }).format(new Date(order.createdAt))
 
     return (
-        <Card className="rounded-[2rem] border-border bg-card shadow-sm overflow-hidden hover:shadow-md transition-all duration-300">
+        <Card className="rounded-[2rem] border-border bg-card shadow-soft overflow-hidden hover:shadow-elegant transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 bg-muted/20 px-6 py-5">
                 <div className="flex items-center gap-4">
                     <div className={`p-2.5 rounded-2xl ${status.color} border`}>

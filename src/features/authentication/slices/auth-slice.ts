@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { authService, type SignupPayload } from '../services/auth.service'
+import { authService, type SignupPayload, type VerifyOtpPayload } from '../services/auth.service'
 import type { AuthUser, LoginDto } from '../types'
 
 export const signupUser = createAsyncThunk('auth/signup', async (data: SignupPayload, { rejectWithValue }) => {
@@ -8,6 +8,34 @@ export const signupUser = createAsyncThunk('auth/signup', async (data: SignupPay
         return response
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to sign up'
+        return rejectWithValue(message)
+    }
+})
+
+export const verifyOtp = createAsyncThunk('auth/verifyOtp', async (data: VerifyOtpPayload, { rejectWithValue }) => {
+    try {
+        const response = await authService.verifyOtp(data)
+        return response.data
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to verify OTP'
+        // Backend currently returns a generic 500 for thrown errors (see global error handler),
+        // so surface a meaningful message for the most common failure.
+        if (message === 'Internal Server Error') {
+            return rejectWithValue('Invalid or expired OTP. Please try again.')
+        }
+        return rejectWithValue(message)
+    }
+})
+
+export const resendOtp = createAsyncThunk('auth/resendOtp', async (email: string, { rejectWithValue }) => {
+    try {
+        await authService.resendOtp({ email })
+        return true
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to resend OTP'
+        if (message === 'Internal Server Error') {
+            return rejectWithValue('Could not resend the code. Please try again.')
+        }
         return rejectWithValue(message)
     }
 })
@@ -99,6 +127,41 @@ export const authSlice = createSlice({
                 }
             })
             .addCase(loginUser.rejected, (state, action) => {
+                state.isLoading = false
+                state.error = action.payload as string
+            })
+            // Verify OTP Cases (auto-login on success)
+            .addCase(verifyOtp.pending, (state) => {
+                state.isLoading = true
+                state.error = null
+            })
+            .addCase(verifyOtp.fulfilled, (state, action) => {
+                state.isLoading = false
+                state.user = action.payload.user
+                state.accessToken = action.payload.accessToken
+                state.refreshToken = action.payload.refreshToken
+                state.isAuthenticated = true
+
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('accessToken', action.payload.accessToken)
+                    if (action.payload.refreshToken) {
+                        localStorage.setItem('refreshToken', action.payload.refreshToken)
+                    }
+                }
+            })
+            .addCase(verifyOtp.rejected, (state, action) => {
+                state.isLoading = false
+                state.error = action.payload as string
+            })
+            // Resend OTP Cases
+            .addCase(resendOtp.pending, (state) => {
+                state.isLoading = true
+                state.error = null
+            })
+            .addCase(resendOtp.fulfilled, (state) => {
+                state.isLoading = false
+            })
+            .addCase(resendOtp.rejected, (state, action) => {
                 state.isLoading = false
                 state.error = action.payload as string
             })

@@ -24,8 +24,10 @@ export function OrderSuccessPage() {
 
     return (
         <section className="container mx-auto px-4 py-16 flex justify-center min-h-[60vh] items-center">
-            <div className="max-w-md w-full rounded-3xl border border-border bg-card p-10 text-center shadow-sm">
-                <CheckCircle2 className="mx-auto mb-6 h-16 w-16 text-green-500" />
+            <div className="max-w-md w-full rounded-3xl border border-border bg-card p-10 text-center shadow-elegant">
+                <div className="mx-auto mb-6 h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <CheckCircle2 className="h-9 w-9 text-green-500" />
+                </div>
                 <h1 className="font-display text-3xl font-bold mb-2">Order Confirmed!</h1>
                 <p className="text-muted-foreground mb-8">
                     Thank you for your purchase. We've received your order and will begin processing it right away.
@@ -39,7 +41,7 @@ export function OrderSuccessPage() {
                 )}
 
                 <div className="flex flex-col gap-3">
-                    <Button asChild className="w-full">
+                    <Button asChild variant="accent" className="w-full">
                         <Link to="/products">
                             <ShoppingBag className="mr-2 h-4 w-4" />
                             Continue Shopping

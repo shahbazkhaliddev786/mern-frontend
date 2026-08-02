@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getBrands, getCategories } from '../services/catalog.service'
+import { getBrands, getCategories } from '@/shared/services/catalog.service'
 
 const FIVE_MINUTES = 5 * 60 * 1000
 

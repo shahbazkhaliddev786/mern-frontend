@@ -82,7 +82,7 @@ export default function CartPage() {
                         {cartItems.map((item) => (
                             <div
                                 key={item._id}
-                                className="grid gap-4 rounded-3xl border border-border bg-card p-6 md:grid-cols-[140px_1fr_140px] md:items-center">
+                                className="grid gap-4 rounded-3xl border border-border bg-card p-6 shadow-soft md:grid-cols-[140px_1fr_140px] md:items-center">
                                 <div className="overflow-hidden rounded-3xl bg-secondary">
                                     {item.product.images?.[0] ? (
                                         <img src={item.product.images[0]} alt={item.product.name} className="h-full w-full object-cover" />
@@ -114,11 +114,11 @@ export default function CartPage() {
                         ))}
                     </div>
 
-                    <aside className="rounded-3xl border border-border bg-card p-6">
+                    <aside className="rounded-3xl border border-border bg-card p-6 shadow-elegant xl:sticky xl:top-24 h-fit">
                         <div className="space-y-4">
                             <div>
                                 <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">Order summary</p>
-                                <h2 className="mt-2 text-3xl font-semibold">${subtotal.toFixed(2)}</h2>
+                                <h2 className="mt-2 font-display text-3xl font-semibold">${subtotal.toFixed(2)}</h2>
                             </div>
 
                             <div className="rounded-3xl bg-background p-4 text-sm text-muted-foreground">
@@ -129,7 +129,7 @@ export default function CartPage() {
                                 </ul>
                             </div>
 
-                            <Button asChild className="w-full" disabled={cartItems.length === 0}>
+                            <Button asChild variant="accent" className="w-full" disabled={cartItems.length === 0}>
                                 <Link to="/checkout">Proceed to Checkout</Link>
                             </Button>
                             <Button asChild variant="secondary" className="w-full">

@@ -2,7 +2,7 @@ import { Plus, Search } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import type { ProductSort } from '../../services/product.service'
-import { useBrands, useCategories } from '../../hooks/useCatalog'
+import { useBrands, useCategories } from '@/shared/hooks/use-catalog'
 
 interface ProductToolbarProps {
     search: string

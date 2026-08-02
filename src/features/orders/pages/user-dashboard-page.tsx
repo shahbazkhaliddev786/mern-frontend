@@ -44,7 +44,9 @@ export function UserDashboardPage() {
                         You haven't placed any orders yet. Start shopping and discover our amazing products!
                     </p>
                     <Link to="/products">
-                        <Button className="rounded-2xl h-14 px-10 text-lg font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                        <Button
+                            variant="accent"
+                            className="rounded-2xl h-14 px-10 text-lg font-bold shadow-glow transition-all hover:scale-105 active:scale-95">
                             Explore Products
                         </Button>
                     </Link>

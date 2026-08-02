@@ -100,7 +100,7 @@ export function EditProfilePage() {
                                 </div>
                                 <label
                                     htmlFor="profile-upload"
-                                    className="absolute bottom-1 right-1 p-3 bg-primary text-primary-foreground rounded-full cursor-pointer shadow-lg hover:scale-110 active:scale-95 transition-all duration-200 border-4 border-background">
+                                    className="absolute bottom-1 right-1 p-3 bg-accent text-accent-foreground rounded-full cursor-pointer shadow-glow hover:scale-110 active:scale-95 transition-all duration-200 border-4 border-background">
                                     <Camera className="h-5 w-5" />
                                     <input id="profile-upload" type="file" className="hidden" accept="image/*" {...register('profile')} />
                                 </label>
@@ -158,7 +158,8 @@ export function EditProfilePage() {
                         <div className="flex flex-col sm:flex-row gap-4 pt-4">
                             <Button
                                 type="submit"
-                                className="flex-[2] gap-2 rounded-xl h-14 text-lg font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-[0.98]"
+                                variant="accent"
+                                className="flex-[2] gap-2 rounded-xl h-14 text-lg font-bold shadow-glow transition-all active:scale-[0.98]"
                                 disabled={isUpdating}>
                                 {isUpdating ? (
                                     <>

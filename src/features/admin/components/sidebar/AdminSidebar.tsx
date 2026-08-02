@@ -18,7 +18,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
     return (
         <div className="flex h-full flex-col overflow-y-auto border-r border-border bg-card px-4 py-6">
             <div className="mb-8 flex items-center justify-center">
-                <h1 className="text-2xl font-black tracking-tight text-primary">ALJO Admin</h1>
+                <h1 className="font-display text-2xl font-bold tracking-tight text-primary">ALJO Admin</h1>
             </div>
 
             <nav className="flex-1 space-y-2">
@@ -33,7 +33,7 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
                             className={({ isActive }) =>
                                 `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200 ${
                                     isActive
-                                        ? 'bg-primary text-primary-foreground shadow-md'
+                                        ? 'bg-accent text-accent-foreground shadow-glow'
                                         : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                                 }`
                             }>

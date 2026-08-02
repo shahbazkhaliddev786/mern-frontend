@@ -27,7 +27,7 @@ export function DataTable<T>({ columns, data, isLoading = false, emptyMessage = 
 
     if (!data || data.length === 0) {
         return (
-            <div className="flex min-h-[400px] w-full flex-col items-center justify-center rounded-[2rem] border border-border bg-card p-8 text-center shadow-sm">
+            <div className="flex min-h-[400px] w-full flex-col items-center justify-center rounded-[2rem] border border-border bg-card p-8 text-center shadow-soft">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted/50 mb-4">
                     <Inbox className="h-10 w-10 text-muted-foreground/50" />
                 </div>
@@ -38,7 +38,7 @@ export function DataTable<T>({ columns, data, isLoading = false, emptyMessage = 
     }
 
     return (
-        <div className="w-full overflow-hidden rounded-[2rem] border border-border bg-card shadow-sm">
+        <div className="w-full overflow-hidden rounded-[2rem] border border-border bg-card shadow-soft">
             <div className="overflow-x-auto">
                 <table className="w-full whitespace-nowrap text-left text-sm">
                     <thead>

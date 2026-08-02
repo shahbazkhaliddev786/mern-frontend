@@ -20,9 +20,9 @@ export default function Header() {
     const { data: cart } = useCart()
 
     return (
-        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b">
+        <header className="sticky top-0 z-50 bg-background/85 backdrop-blur-md border-b border-border/80">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                <Link to="/" className="font-display text-2xl font-bold tracking-tight">
+                <Link to="/" className="font-display text-2xl font-semibold tracking-tight hover:text-accent transition-colors">
                     Aljo Store
                 </Link>
 
@@ -31,8 +31,9 @@ export default function Header() {
                         <Link
                             key={link.to}
                             to={link.to}
-                            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                            className="relative text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group">
                             {link.label}
+                            <span className="absolute -bottom-1 left-0 h-px w-0 bg-accent transition-all duration-300 group-hover:w-full" />
                         </Link>
                     ))}
                 </nav>
@@ -48,14 +49,14 @@ export default function Header() {
                         </Link>
                     )}
 
-                    <Link to="/products" className="text-muted-foreground hover:text-foreground transition-colors">
+                    <Link to="/products" className="text-muted-foreground hover:text-accent transition-colors">
                         <Search className="h-5 w-5" />
                     </Link>
 
-                    <Link to="/cart" className="relative text-muted-foreground hover:text-foreground transition-colors">
+                    <Link to="/cart" className="relative text-muted-foreground hover:text-accent transition-colors">
                         <ShoppingBag className="h-5 w-5" />
                         {(cart?.itemsCount ?? 0) > 0 && (
-                            <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                            <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-soft">
                                 {cart?.itemsCount}
                             </span>
                         )}
@@ -67,7 +68,7 @@ export default function Header() {
                         </SheetTrigger>
                         <SheetContent side="right" className="w-72 text-center">
                             <div className="mt-8 flex flex-col gap-1">
-                                <p className="font-display text-xl font-bold mb-6">Aljo Store</p>
+                                <p className="font-display text-xl font-semibold mb-6">Aljo Store</p>
                                 {navLinks.map((link) => (
                                     <SheetClose key={link.to} asChild>
                                         <Link
@@ -77,7 +78,7 @@ export default function Header() {
                                         </Link>
                                     </SheetClose>
                                 ))}
-                                <div className="border-t border-gray-500 my-4" />
+                                <div className="border-t border-border my-4" />
 
                                 {isAuthenticated ? (
                                     <SheetClose asChild>

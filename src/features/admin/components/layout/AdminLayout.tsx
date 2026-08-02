@@ -39,7 +39,7 @@ export function AdminLayout() {
                         <Button variant="ghost" size="icon" onClick={() => setIsMobileSidebarOpen(true)} className="text-foreground">
                             <Menu className="h-6 w-6" />
                         </Button>
-                        <h2 className="text-xl font-bold tracking-tight text-primary">ALJO Admin</h2>
+                        <h2 className="font-display text-xl font-bold tracking-tight text-primary">ALJO Admin</h2>
                     </div>
 
                     <div className="hidden lg:block">{/* Can add page context title here if needed */}</div>
@@ -49,7 +49,7 @@ export function AdminLayout() {
                         {user?.profile ? (
                             <img src={user.profile} alt="Profile" className="h-10 w-10 rounded-full border border-border object-cover" />
                         ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-bold border border-primary/20">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent font-bold border border-accent/20">
                                 {user?.name?.charAt(0).toUpperCase() || 'A'}
                             </div>
                         )}

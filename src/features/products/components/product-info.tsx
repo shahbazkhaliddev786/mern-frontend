@@ -50,7 +50,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
                         <Star
                             key={i}
                             className={`h-4 w-4 ${
-                                i < Math.floor(product.rating ?? 0) ? 'fill-amber-400 text-amber-400' : 'fill-muted text-muted-foreground/30'
+                                i < Math.floor(product.rating ?? 0) ? 'fill-gold text-gold' : 'fill-muted text-muted-foreground/30'
                             }`}
                         />
                     ))}
@@ -116,7 +116,8 @@ export function ProductInfo({ product }: ProductInfoProps) {
                 <Button
                     onClick={handleAddToCart}
                     disabled={isLoading || !inStock}
-                    className="h-14 w-full rounded-2xl text-base font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50">
+                    variant="accent"
+                    className="h-14 w-full rounded-2xl text-base font-bold shadow-glow transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50">
                     <ShoppingCart className="mr-2 h-5 w-5" />
                     {addToCartMutation.isPending ? 'Adding...' : !inStock ? 'Out of Stock' : 'Add to Cart'}
                 </Button>

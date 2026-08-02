@@ -44,92 +44,139 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    --color-accent-2: var(--accent-2);
+    --color-accent-2-foreground: var(--accent-2-foreground);
+
+    /* INWOOD section bands & product tiles */
+    --color-band-blue: var(--band-blue);
+    --color-band-mint: var(--band-mint);
+    --color-tile-mint: var(--tile-mint);
+    --color-tile-blue: var(--tile-blue);
+    --color-tile-lavender: var(--tile-lavender);
+    --color-tile-peach: var(--tile-peach);
+    --color-gold: var(--gold);
+
+    --font-display: 'Fraunces', ui-serif, Georgia, serif;
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+    --shadow-soft: 0 1px 2px hsl(180deg 30% 12% / 0.04), 0 4px 16px hsl(180deg 30% 12% / 0.06);
+    --shadow-elegant: 0 8px 24px hsl(180deg 30% 12% / 0.08), 0 2px 8px hsl(180deg 30% 12% / 0.05);
+    --shadow-lifted: 0 24px 48px -12px hsl(180deg 30% 12% / 0.18), 0 4px 12px hsl(180deg 30% 12% / 0.06);
+    --shadow-glow: 0 0 0 1px hsl(168deg 15% 50% / 0.2), 0 8px 24px hsl(168deg 15% 50% / 0.22);
 }
 
 /* =========================
    Light Theme
 ========================= */
 :root {
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --background: hsl(40deg 33% 98%);
-    --foreground: hsl(24deg 10% 10%);
+    /* INWOOD: cream background, dark-teal ink */
+    --background: hsl(45deg 43% 98%);
+    --foreground: hsl(178deg 28% 18%);
 
     --card: hsl(0deg 0% 100%);
-    --card-foreground: hsl(24deg 10% 10%);
+    --card-foreground: hsl(178deg 28% 18%);
 
     --popover: hsl(0deg 0% 100%);
-    --popover-foreground: hsl(24deg 10% 10%);
+    --popover-foreground: hsl(178deg 28% 18%);
 
-    --primary: hsl(24deg 10% 10%);
-    --primary-foreground: hsl(40deg 33% 98%);
+    /* Primary = dark teal (headings, dark surfaces, footer) */
+    --primary: hsl(182deg 48% 25%);
+    --primary-foreground: hsl(45deg 43% 98%);
 
-    --secondary: hsl(35deg 25% 93%);
-    --secondary-foreground: hsl(24deg 10% 10%);
+    --secondary: hsl(150deg 14% 93%);
+    --secondary-foreground: hsl(182deg 48% 22%);
 
-    --muted: hsl(40deg 18% 94%);
-    --muted-foreground: hsl(24deg 5% 45%);
+    --muted: hsl(45deg 25% 95%);
+    --muted-foreground: hsl(180deg 8% 42%);
 
-    --accent: hsl(38deg 92% 50%);
-    --accent-foreground: hsl(20deg 20% 10%);
+    /* Accent = sage green (buttons / CTAs) */
+    --accent: hsl(168deg 15% 50%);
+    --accent-foreground: hsl(0deg 0% 100%);
 
-    --destructive: hsl(0deg 84.2% 60.2%);
+    /* Accent-2 = deep teal for emphasis */
+    --accent-2: hsl(182deg 48% 25%);
+    --accent-2-foreground: hsl(45deg 43% 98%);
+
+    --destructive: hsl(0deg 72% 51%);
     --destructive-foreground: hsl(0deg 0% 100%);
 
-    --border: hsl(36deg 15% 89%);
-    --input: hsl(36deg 15% 89%);
-    --ring: hsl(38deg 92% 50%);
+    --border: hsl(45deg 18% 90%);
+    --input: hsl(45deg 18% 90%);
+    --ring: hsl(168deg 15% 50%);
 
-    --sidebar: hsl(0deg 0% 98%);
-    --sidebar-foreground: hsl(240deg 5.3% 26.1%);
-    --sidebar-primary: hsl(240deg 5.9% 10%);
-    --sidebar-primary-foreground: hsl(0deg 0% 98%);
-    --sidebar-accent: hsl(240deg 4.8% 95.9%);
-    --sidebar-accent-foreground: hsl(240deg 5.9% 10%);
-    --sidebar-border: hsl(220deg 13% 91%);
-    --sidebar-ring: hsl(217.2deg 91.2% 59.8%);
+    /* INWOOD section bands + product tiles + stars */
+    --band-blue: hsl(200deg 55% 92%);
+    --band-mint: hsl(168deg 55% 92%);
+    --tile-mint: hsl(158deg 62% 87%);
+    --tile-blue: hsl(200deg 55% 92%);
+    --tile-lavender: hsl(249deg 100% 96%);
+    --tile-peach: hsl(28deg 60% 90%);
+    --gold: hsl(45deg 100% 51%);
+
+    --sidebar: hsl(45deg 43% 99%);
+    --sidebar-foreground: hsl(180deg 10% 30%);
+    --sidebar-primary: hsl(182deg 48% 25%);
+    --sidebar-primary-foreground: hsl(45deg 43% 98%);
+    --sidebar-accent: hsl(150deg 14% 93%);
+    --sidebar-accent-foreground: hsl(182deg 48% 22%);
+    --sidebar-border: hsl(45deg 18% 90%);
+    --sidebar-ring: hsl(168deg 15% 50%);
 }
 
 /* =========================
    Dark Theme
 ========================= */
 .dark {
-    --background: hsl(24deg 10% 6%);
-    --foreground: hsl(40deg 33% 98%);
+    --background: hsl(185deg 30% 7%);
+    --foreground: hsl(45deg 43% 96%);
 
-    --card: hsl(24deg 10% 8%);
-    --card-foreground: hsl(40deg 33% 98%);
+    --card: hsl(185deg 26% 10%);
+    --card-foreground: hsl(45deg 43% 96%);
 
-    --popover: hsl(24deg 10% 8%);
-    --popover-foreground: hsl(40deg 33% 98%);
+    --popover: hsl(185deg 26% 10%);
+    --popover-foreground: hsl(45deg 43% 96%);
 
-    --primary: hsl(40deg 33% 98%);
-    --primary-foreground: hsl(24deg 10% 10%);
+    --primary: hsl(168deg 22% 60%);
+    --primary-foreground: hsl(185deg 30% 8%);
 
-    --secondary: hsl(24deg 10% 15%);
-    --secondary-foreground: hsl(40deg 33% 98%);
+    --secondary: hsl(185deg 20% 15%);
+    --secondary-foreground: hsl(45deg 43% 96%);
 
-    --muted: hsl(24deg 10% 15%);
-    --muted-foreground: hsl(24deg 5% 60%);
+    --muted: hsl(185deg 20% 15%);
+    --muted-foreground: hsl(180deg 10% 62%);
 
-    --accent: hsl(38deg 92% 50%);
-    --accent-foreground: hsl(20deg 20% 10%);
+    --accent: hsl(168deg 22% 55%);
+    --accent-foreground: hsl(185deg 30% 8%);
 
-    --destructive: hsl(0deg 62.8% 30.6%);
+    --accent-2: hsl(168deg 22% 60%);
+    --accent-2-foreground: hsl(185deg 30% 8%);
+
+    --destructive: hsl(0deg 62.8% 40%);
     --destructive-foreground: hsl(0deg 0% 100%);
 
-    --border: hsl(24deg 10% 15%);
-    --input: hsl(24deg 10% 15%);
-    --ring: hsl(38deg 92% 50%);
+    --border: hsl(185deg 20% 16%);
+    --input: hsl(185deg 20% 16%);
+    --ring: hsl(168deg 22% 55%);
 
-    --sidebar: hsl(240deg 5.9% 10%);
-    --sidebar-foreground: hsl(240deg 4.8% 95.9%);
-    --sidebar-primary: hsl(224.3deg 76.3% 48%);
-    --sidebar-primary-foreground: hsl(0deg 0% 100%);
-    --sidebar-accent: hsl(240deg 3.7% 15.9%);
-    --sidebar-accent-foreground: hsl(240deg 4.8% 95.9%);
-    --sidebar-border: hsl(240deg 3.7% 15.9%);
-    --sidebar-ring: hsl(217.2deg 91.2% 59.8%);
+    --band-blue: hsl(200deg 30% 18%);
+    --band-mint: hsl(168deg 30% 16%);
+    --tile-mint: hsl(158deg 25% 20%);
+    --tile-blue: hsl(200deg 30% 20%);
+    --tile-lavender: hsl(249deg 25% 24%);
+    --tile-peach: hsl(28deg 30% 22%);
+    --gold: hsl(45deg 100% 55%);
+
+    --sidebar: hsl(185deg 28% 9%);
+    --sidebar-foreground: hsl(45deg 30% 90%);
+    --sidebar-primary: hsl(168deg 22% 55%);
+    --sidebar-primary-foreground: hsl(185deg 30% 8%);
+    --sidebar-accent: hsl(185deg 20% 15%);
+    --sidebar-accent-foreground: hsl(45deg 43% 96%);
+    --sidebar-border: hsl(185deg 20% 16%);
+    --sidebar-ring: hsl(168deg 22% 55%);
 }
 
 /* =========================
@@ -140,7 +187,18 @@
         @apply border-border outline-ring/50;
     }
 
+    html {
+        scroll-behavior: smooth;
+    }
+
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground font-sans antialiased;
+        font-feature-settings:
+            'cv11' 1,
+            'ss01' 1;
+    }
+
+    ::selection {
+        @apply bg-accent/25 text-foreground;
     }
 }

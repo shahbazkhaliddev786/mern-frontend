@@ -11,7 +11,7 @@ interface ProfileCardProps {
 
 export function ProfileCard({ user }: ProfileCardProps) {
     return (
-        <Card className="rounded-3xl border-border bg-card shadow-sm">
+        <Card className="rounded-3xl border-border bg-card shadow-elegant">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="space-y-1">
                     <CardTitle className="text-2xl font-semibold">Personal Information</CardTitle>

@@ -10,10 +10,10 @@ interface DashboardStatCardProps {
 
 export function DashboardStatCard({ title, value, icon, trend, trendUp }: DashboardStatCardProps) {
     return (
-        <div className="flex flex-col gap-4 rounded-[2.5rem] border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md">
+        <div className="flex flex-col gap-4 rounded-[2.5rem] border border-border bg-card p-6 shadow-soft transition-all hover:shadow-elegant">
             <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">{icon}</div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">{icon}</div>
             </div>
             <div>
                 <p className="font-display text-4xl font-black text-foreground tracking-tight">{value}</p>

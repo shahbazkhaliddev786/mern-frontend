@@ -28,13 +28,18 @@ export default function ProductCard({ product }: { product: Product }) {
     return (
         <div className="group">
             <Link to={`/products/${product._id}`}>
-                <div className="aspect-square overflow-hidden rounded-lg bg-secondary mb-3">
+                <div className="relative aspect-square overflow-hidden rounded-xl bg-secondary mb-3 shadow-soft transition-shadow duration-300 group-hover:shadow-elegant">
                     <img
                         src={product.images[0]}
                         alt={product.name}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                     />
+                    {product.originalPrice && (
+                        <span className="absolute top-3 left-3 bg-accent-2 text-accent-2-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full shadow-soft">
+                            Sale
+                        </span>
+                    )}
                 </div>
                 <div className="space-y-1">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">{product.category.name}</p>
@@ -43,7 +48,7 @@ export default function ProductCard({ product }: { product: Product }) {
                         {Array.from({ length: 5 }, (_, i) => (
                             <Star
                                 key={i}
-                                className={`h-3 w-3 ${i < Math.floor(product.rating ?? 0) ? 'fill-accent text-accent' : 'text-muted-foreground/30'}`}
+                                className={`h-3 w-3 ${i < Math.floor(product.rating ?? 0) ? 'fill-gold text-gold' : 'text-muted-foreground/30'}`}
                             />
                         ))}
                         <span className="text-xs text-muted-foreground ml-1">({product.reviews ?? 0})</span>
@@ -57,10 +62,10 @@ export default function ProductCard({ product }: { product: Product }) {
             <button
                 onClick={isInCart ? handleRemoveFromCart : handleAddToCart}
                 disabled={isLoading}
-                className={`mt-2 w-full py-2 px-4 rounded-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${
+                className={`mt-2 w-full py-2 px-4 rounded-md transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] ${
                     isInCart
                         ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                        : 'bg-accent text-accent-foreground hover:bg-accent/90'
+                        : 'bg-accent text-accent-foreground shadow-soft hover:bg-accent/90 hover:shadow-glow'
                 }`}>
                 {isInCart ? (
                     <>

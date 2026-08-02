@@ -26,7 +26,7 @@ export function ProfileMenu() {
                 leave="transition ease-in duration-75"
                 leaveFrom="transform opacity-100 scale-100"
                 leaveTo="transform opacity-0 scale-95">
-                <Menu.Items className="absolute right-0 z-50 mt-2 w-56 origin-top-right divide-y divide-border rounded-xl bg-card shadow-lg ring-1 ring-border focus:outline-none overflow-hidden">
+                <Menu.Items className="absolute right-0 z-50 mt-2 w-56 origin-top-right divide-y divide-border rounded-xl bg-card shadow-elegant ring-1 ring-border focus:outline-none overflow-hidden">
                     <div className="px-4 py-3">
                         <p className="text-sm font-medium text-foreground truncate">{user?.name || 'My Account'}</p>
                         <p className="text-xs text-muted-foreground truncate">{user?.email || 'Logged in'}</p>

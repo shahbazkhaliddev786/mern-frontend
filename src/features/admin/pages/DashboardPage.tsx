@@ -112,7 +112,7 @@ export function DashboardPage() {
             )}
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-                <div className="col-span-1 rounded-[2.5rem] border border-border bg-card p-8 shadow-sm lg:col-span-2">
+                <div className="col-span-1 rounded-[2.5rem] border border-border bg-card p-8 shadow-soft lg:col-span-2">
                     <h3 className="mb-6 text-xl font-bold">Revenue Overview</h3>
                     {isLoading ? (
                         <div className="flex min-h-[260px] items-center justify-center">
@@ -123,7 +123,7 @@ export function DashboardPage() {
                     )}
                 </div>
 
-                <div className="col-span-1 rounded-[2.5rem] border border-border bg-card p-8 shadow-sm">
+                <div className="col-span-1 rounded-[2.5rem] border border-border bg-card p-8 shadow-soft">
                     <h3 className="mb-6 text-xl font-bold">Orders by Status</h3>
                     {isLoading ? (
                         <div className="flex min-h-[200px] items-center justify-center">

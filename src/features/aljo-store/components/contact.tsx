@@ -51,9 +51,9 @@ export function ContactForm() {
     }
 
     return (
-        <Card className="w-full sm:max-w-md">
+        <Card className="w-full shadow-elegant">
             <CardHeader>
-                <CardTitle>Contact Us</CardTitle>
+                <CardTitle className="font-display text-xl">Send a Message</CardTitle>
                 <CardDescription>We're here to help. Reach out with any questions or concerns.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -125,7 +125,7 @@ export function ContactForm() {
                     <Button type="button" variant="outline" onClick={() => form.reset()}>
                         Reset
                     </Button>
-                    <Button type="submit" form="form-rhf-demo" disabled={form.formState.isSubmitting}>
+                    <Button type="submit" variant="accent" form="form-rhf-demo" disabled={form.formState.isSubmitting}>
                         {form.formState.isSubmitting ? 'Submitting...' : 'Submit'}
                     </Button>
                 </Field>

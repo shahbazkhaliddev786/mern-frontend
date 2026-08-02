@@ -15,7 +15,11 @@ interface AppEnv {
 }
 
 const validateEnv = (envMode: Mode, env: AppEnv) => {
-    const requiredVars: (keyof AppEnv)[] = ['PORT', 'BACKEND_URL', 'VITE_ENVIRONMENT']
+    const requiredVars: (keyof AppEnv)[] = ['BACKEND_URL', 'VITE_ENVIRONMENT']
+
+    if (envMode !== 'production') {
+        requiredVars.push('PORT')
+    }
 
     if (envMode === 'production') {
         requiredVars.push('SENTRY_AUTH_TOKEN')
@@ -47,7 +51,7 @@ export default defineConfig(({ mode }) => {
 
     validateEnv(envMode, env)
 
-    const port = normalizeport(env.PORT)
+    const port = env.PORT ? normalizeport(env.PORT) : 3000
 
     const config: ServerOptions = {
         port,

@@ -75,7 +75,7 @@ export function CheckoutPage() {
 
             <div className="grid gap-8 xl:grid-cols-[1fr_0.6fr] items-start">
                 {/* Shipping Form */}
-                <div className="rounded-3xl border border-border bg-card p-6 md:p-8">
+                <div className="rounded-3xl border border-border bg-card p-6 md:p-8 shadow-soft">
                     <h2 className="text-xl font-semibold mb-6">Shipping Address</h2>
 
                     <form id="checkout-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -120,7 +120,7 @@ export function CheckoutPage() {
                 </div>
 
                 {/* Order Summary */}
-                <aside className="rounded-3xl border border-border bg-card p-6 md:p-8 sticky top-24">
+                <aside className="rounded-3xl border border-border bg-card p-6 md:p-8 shadow-elegant sticky top-24">
                     <h2 className="text-xl font-semibold mb-6">Order Summary</h2>
 
                     <div className="space-y-4 mb-6">
@@ -149,7 +149,7 @@ export function CheckoutPage() {
                         </div>
                     </div>
 
-                    <Button type="submit" form="checkout-form" className="w-full" disabled={checkoutMutation.isPending}>
+                    <Button type="submit" variant="accent" form="checkout-form" className="w-full" disabled={checkoutMutation.isPending}>
                         {checkoutMutation.isPending ? (
                             <span className="flex items-center gap-2">
                                 <Loader2 className="h-4 w-4 animate-spin" /> Processing...
