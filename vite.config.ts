@@ -15,14 +15,13 @@ interface AppEnv {
 }
 
 const validateEnv = (envMode: Mode, env: AppEnv) => {
-    const requiredVars: (keyof AppEnv)[] = ['BACKEND_URL', 'VITE_ENVIRONMENT']
+    const requiredVars: (keyof AppEnv)[] = ['VITE_ENVIRONMENT']
 
     if (envMode !== 'production') {
-        requiredVars.push('PORT')
-    }
-
-    if (envMode === 'production') {
-        requiredVars.push('SENTRY_AUTH_TOKEN')
+        requiredVars.push('PORT', 'BACKEND_URL')
+    } else {
+        // BACKEND_URL and SENTRY_AUTH_TOKEN are optional in production so Vercel can build
+        // without a backend deployed yet.
     }
 
     for (const key of requiredVars) {
@@ -75,6 +74,7 @@ export default defineConfig(({ mode }) => {
             }),
             tailwindcss(),
             env.VITE_ENVIRONMENT === 'production' &&
+                env.SENTRY_AUTH_TOKEN &&
                 sentryVitePlugin({
                     org: 'numl-xn',
                     project: 'react-production-setup',
