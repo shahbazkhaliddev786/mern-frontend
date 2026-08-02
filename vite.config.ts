@@ -73,16 +73,16 @@ export default defineConfig(({ mode }) => {
                 }
             }),
             tailwindcss(),
-            env.VITE_ENVIRONMENT === 'production' &&
-                env.SENTRY_AUTH_TOKEN &&
-                sentryVitePlugin({
-                    org: 'numl-xn',
-                    project: 'react-production-setup',
-                    authToken: env.SENTRY_AUTH_TOKEN,
-                    sourcemaps: {
-                        filesToDeleteAfterUpload: ['dist/assets/**/*.map']
-                    }
-                })
+            env.VITE_ENVIRONMENT === 'production' && env.SENTRY_AUTH_TOKEN
+                ? sentryVitePlugin({
+                      org: 'numl-xn',
+                      project: 'react-production-setup',
+                      authToken: env.SENTRY_AUTH_TOKEN,
+                      sourcemaps: {
+                          filesToDeleteAfterUpload: ['dist/assets/**/*.map']
+                      }
+                  })
+                : undefined
         ],
         test: {
             globals: true,
