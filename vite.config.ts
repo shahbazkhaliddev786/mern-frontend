@@ -48,6 +48,11 @@ export default defineConfig(({ mode }) => {
     const envMode = mode as Mode
     const env = loadEnv(envMode, process.cwd(), '') as unknown as AppEnv
 
+    // Fallback if VITE_ENVIRONMENT is missing in CI/Vercel
+    if (!env.VITE_ENVIRONMENT) {
+        env.VITE_ENVIRONMENT = envMode
+    }
+
     validateEnv(envMode, env)
 
     const port = env.PORT ? normalizeport(env.PORT) : 3000
