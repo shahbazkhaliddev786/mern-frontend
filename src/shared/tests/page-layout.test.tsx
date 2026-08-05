@@ -30,7 +30,7 @@ describe('PageLayout Component', () => {
         expect(screen.getByRole('contentinfo')).toBeInTheDocument() // usually <footer>
 
         // Confirm Header is mounted (brand link)
-        expect(screen.getByRole('link', { name: /Aljo Store/i })).toBeInTheDocument()
+        expect(screen.getAllByRole('link', { name: /Aljo Store/i }).length).toBeGreaterThan(0)
 
         // Confirm Footer is mounted (copyright text)
         expect(screen.getByText(/© 2026 Aljo Store/i)).toBeInTheDocument()

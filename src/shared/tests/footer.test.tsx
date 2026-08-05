@@ -12,17 +12,17 @@ describe('Footer Component', () => {
             </MemoryRouter>
         )
 
-    it('renders the brand name and description correctly', () => {
+    it('renders the brand name and address correctly', () => {
         renderFooter()
         expect(screen.getByText('Aljo Store')).toBeInTheDocument()
-        expect(screen.getByText(/Curating timeless pieces crafted for modern living/i)).toBeInTheDocument()
+        expect(screen.getByText(/877 The Bronx, NY/i)).toBeInTheDocument()
     })
 
     it('renders all section headings', () => {
         renderFooter()
+        expect(screen.getByText('My Account')).toBeInTheDocument()
+        expect(screen.getByText('Help')).toBeInTheDocument()
         expect(screen.getByText('Shop')).toBeInTheDocument()
-        expect(screen.getByText('Company')).toBeInTheDocument()
-        expect(screen.getByText('Customer Care')).toBeInTheDocument()
     })
 
     it('renders correct number of navigation links in each section', () => {
@@ -30,15 +30,12 @@ describe('Footer Component', () => {
 
         const allLinks = screen.getAllByRole('link')
 
-        // You have 3 sections with links → 3 × 4 = 12
-        expect(allLinks).toHaveLength(12)
+        // 1 brand + 4 social + 12 nav = 17
+        expect(allLinks).toHaveLength(17)
 
-        // More precise checks (recommended – survives if you add/remove links later)
-        expect(screen.getAllByRole('link', { name: /All Products|New Arrivals|Best Sellers|Sale/i })).toHaveLength(4)
-
-        expect(screen.getAllByRole('link', { name: /About Us|Sustainability|Careers|Press/i })).toHaveLength(4)
-
+        expect(screen.getAllByRole('link', { name: /Sign In|Register|My Orders|Profile/i })).toHaveLength(4)
         expect(screen.getAllByRole('link', { name: /Contact Us|Shipping & Returns|FAQ|Size Guide/i })).toHaveLength(4)
+        expect(screen.getAllByRole('link', { name: /All Products|New Arrivals|Best Sellers|Your Cart/i })).toHaveLength(4)
     })
 
     it('renders the copyright notice with current year', () => {
