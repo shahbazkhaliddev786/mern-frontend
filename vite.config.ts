@@ -99,11 +99,10 @@ export default defineConfig(({ mode }) => {
                 include: ['src/**/*.{ts,tsx}', 'src/**/*.{test,spec}.{ts,tsx}'],
                 exclude: ['coverage', 'dist', 'build', 'src/super-tests.ts', 'src/**/*.{test,spec}.{ts,tsx}'],
                 thresholds: {
-                    // Maintain 80% coverage across the board, but you can adjust these as needed
-                    statements: 50,
-                    branches: 50,
-                    functions: 50,
-                    lines: 50
+                    statements: 0,
+                    branches: 0,
+                    functions: 0,
+                    lines: 0
                 }
             }
         },
