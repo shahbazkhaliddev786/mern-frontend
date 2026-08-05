@@ -3,141 +3,272 @@
 exports[`Footer Component > matches snapshot 1`] = `
 <div>
   <footer
-    class="bg-primary text-primary-foreground"
+    class="border-t border-border bg-secondary/40"
   >
     <div
       class="container mx-auto px-4 py-16"
     >
       <div
-        class="grid grid-cols-1 md:grid-cols-4 gap-10"
+        class="grid grid-cols-2 gap-10 md:grid-cols-4 lg:grid-cols-5"
       >
-        <div>
-          <h3
-            class="font-display text-xl font-bold mb-4"
+        <div
+          class="col-span-2 lg:col-span-2"
+        >
+          <a
+            class="font-display text-2xl font-semibold text-primary"
+            data-discover="true"
+            href="/"
           >
             Aljo Store
-          </h3>
-          <p
-            class="text-primary-foreground/70 text-sm leading-relaxed"
+          </a>
+          <div
+            class="mt-4 flex gap-3"
           >
-            Curating timeless pieces crafted for modern living. Quality, sustainability, and style in every detail.
-          </p>
+            <a
+              aria-label="Facebook"
+              class="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-accent hover:bg-accent hover:text-accent-foreground"
+              href="#"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-facebook h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"
+                />
+              </svg>
+            </a>
+            <a
+              aria-label="Instagram"
+              class="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-accent hover:bg-accent hover:text-accent-foreground"
+              href="#"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-instagram h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect
+                  height="20"
+                  rx="5"
+                  ry="5"
+                  width="20"
+                  x="2"
+                  y="2"
+                />
+                <path
+                  d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"
+                />
+                <line
+                  x1="17.5"
+                  x2="17.51"
+                  y1="6.5"
+                  y2="6.5"
+                />
+              </svg>
+            </a>
+            <a
+              aria-label="LinkedIn"
+              class="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-accent hover:bg-accent hover:text-accent-foreground"
+              href="#"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-linkedin h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"
+                />
+                <rect
+                  height="12"
+                  width="4"
+                  x="2"
+                  y="9"
+                />
+                <circle
+                  cx="4"
+                  cy="4"
+                  r="2"
+                />
+              </svg>
+            </a>
+            <a
+              aria-label="Twitter"
+              class="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-accent hover:bg-accent hover:text-accent-foreground"
+              href="#"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-twitter h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"
+                />
+              </svg>
+            </a>
+          </div>
+          <div
+            class="mt-6 space-y-2 text-sm text-muted-foreground"
+          >
+            <p
+              class="font-semibold text-foreground"
+            >
+              Address
+            </p>
+            <p
+              class="flex items-center gap-2"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-phone h-4 w-4 shrink-0"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"
+                />
+              </svg>
+               +1 123 654 987
+            </p>
+            <p
+              class="flex items-center gap-2"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-map-pin h-4 w-4 shrink-0"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+                />
+                <circle
+                  cx="12"
+                  cy="10"
+                  r="3"
+                />
+              </svg>
+               877 The Bronx, NY 14568, USA
+            </p>
+          </div>
         </div>
         <div>
           <h4
-            class="font-semibold mb-4 text-sm uppercase tracking-wider"
+            class="mb-4 text-sm font-semibold uppercase tracking-wider text-primary"
           >
-            Shop
+            My Account
           </h4>
           <ul
-            class="space-y-3 text-sm text-primary-foreground/70"
+            class="space-y-3 text-sm text-muted-foreground"
           >
             <li>
               <a
-                class="hover:text-primary-foreground transition-colors"
+                class="transition-colors hover:text-accent"
                 data-discover="true"
-                href="/products"
+                href="/login"
               >
-                All Products
+                Sign In
               </a>
             </li>
             <li>
               <a
-                class="hover:text-primary-foreground transition-colors"
+                class="transition-colors hover:text-accent"
                 data-discover="true"
-                href="/products"
+                href="/signup"
               >
-                New Arrivals
+                Register
               </a>
             </li>
             <li>
               <a
-                class="hover:text-primary-foreground transition-colors"
+                class="transition-colors hover:text-accent"
                 data-discover="true"
-                href="/products"
+                href="/dashboard"
               >
-                Best Sellers
+                My Orders
               </a>
             </li>
             <li>
               <a
-                class="hover:text-primary-foreground transition-colors"
+                class="transition-colors hover:text-accent"
                 data-discover="true"
-                href="/products"
+                href="/profile"
               >
-                Sale
+                Profile
               </a>
             </li>
           </ul>
         </div>
         <div>
           <h4
-            class="font-semibold mb-4 text-sm uppercase tracking-wider"
+            class="mb-4 text-sm font-semibold uppercase tracking-wider text-primary"
           >
-            Company
+            Help
           </h4>
           <ul
-            class="space-y-3 text-sm text-primary-foreground/70"
+            class="space-y-3 text-sm text-muted-foreground"
           >
             <li>
               <a
-                class="hover:text-primary-foreground transition-colors"
+                class="transition-colors hover:text-accent"
                 data-discover="true"
-                href="/about"
-              >
-                About Us
-              </a>
-            </li>
-            <li>
-              <a
-                class="hover:text-primary-foreground transition-colors"
-                data-discover="true"
-                href="/about"
-              >
-                Sustainability
-              </a>
-            </li>
-            <li>
-              <a
-                class="hover:text-primary-foreground transition-colors"
-                data-discover="true"
-                href="/about"
-              >
-                Careers
-              </a>
-            </li>
-            <li>
-              <a
-                class="hover:text-primary-foreground transition-colors"
-                data-discover="true"
-                href="/about"
-              >
-                Press
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h4
-            class="font-semibold mb-4 text-sm uppercase tracking-wider"
-          >
-            Customer Care
-          </h4>
-          <ul
-            class="space-y-3 text-sm text-primary-foreground/70"
-          >
-            <li>
-              <a
-                class="hover:text-primary-foreground transition-colors"
-                data-discover="true"
-                href="/about"
+                href="/contact"
               >
                 Contact Us
               </a>
             </li>
             <li>
               <a
-                class="hover:text-primary-foreground transition-colors"
+                class="transition-colors hover:text-accent"
                 data-discover="true"
                 href="/about"
               >
@@ -146,7 +277,7 @@ exports[`Footer Component > matches snapshot 1`] = `
             </li>
             <li>
               <a
-                class="hover:text-primary-foreground transition-colors"
+                class="transition-colors hover:text-accent"
                 data-discover="true"
                 href="/about"
               >
@@ -155,7 +286,7 @@ exports[`Footer Component > matches snapshot 1`] = `
             </li>
             <li>
               <a
-                class="hover:text-primary-foreground transition-colors"
+                class="transition-colors hover:text-accent"
                 data-discover="true"
                 href="/about"
               >
@@ -164,9 +295,56 @@ exports[`Footer Component > matches snapshot 1`] = `
             </li>
           </ul>
         </div>
+        <div>
+          <h4
+            class="mb-4 text-sm font-semibold uppercase tracking-wider text-primary"
+          >
+            Shop
+          </h4>
+          <ul
+            class="space-y-3 text-sm text-muted-foreground"
+          >
+            <li>
+              <a
+                class="transition-colors hover:text-accent"
+                data-discover="true"
+                href="/products"
+              >
+                All Products
+              </a>
+            </li>
+            <li>
+              <a
+                class="transition-colors hover:text-accent"
+                data-discover="true"
+                href="/products"
+              >
+                New Arrivals
+              </a>
+            </li>
+            <li>
+              <a
+                class="transition-colors hover:text-accent"
+                data-discover="true"
+                href="/products"
+              >
+                Best Sellers
+              </a>
+            </li>
+            <li>
+              <a
+                class="transition-colors hover:text-accent"
+                data-discover="true"
+                href="/cart"
+              >
+                Your Cart
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
       <div
-        class="border-t border-primary-foreground/20 mt-12 pt-8 text-center text-sm text-primary-foreground/50"
+        class="mt-12 border-t border-border pt-8 text-center text-sm text-muted-foreground"
       >
         © 2026 Aljo Store. All rights reserved.
       </div>

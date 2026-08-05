@@ -50,7 +50,7 @@ export default defineConfig(({ mode }) => {
 
     // Fallback if VITE_ENVIRONMENT is missing in CI/Vercel
     if (!env.VITE_ENVIRONMENT) {
-        env.VITE_ENVIRONMENT = envMode
+        env.VITE_ENVIRONMENT = (envMode as string) === 'test' ? 'testing' : envMode
     }
 
     validateEnv(envMode, env)
