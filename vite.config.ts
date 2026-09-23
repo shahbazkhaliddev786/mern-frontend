@@ -53,6 +53,12 @@ export default defineConfig(({ mode }) => {
         env.VITE_ENVIRONMENT = (envMode as string) === 'test' ? 'testing' : envMode
     }
 
+    // Fallbacks for testing mode (used by vitest and pre-push hook)
+    if (envMode === 'testing' || (envMode as string) === 'test') {
+        if (!env.PORT) env.PORT = '5173'
+        if (!env.BACKEND_URL) env.BACKEND_URL = 'http://localhost:5000'
+    }
+
     validateEnv(envMode, env)
 
     const port = env.PORT ? normalizeport(env.PORT) : 3000
