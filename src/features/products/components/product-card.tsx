@@ -5,7 +5,11 @@ import { useRemoveFromCart } from '../hooks/useRemoveFromCart'
 import { useIsInCart } from '../hooks/useIsInCart'
 import type { Product } from '../types'
 
-export default function ProductCard({ product }: { product: Product }) {
+interface ProductCardProps {
+    product: Product
+}
+
+export default function ProductCard({ product }: ProductCardProps) {
     const addToCartMutation = useAddToCart()
     const removeFromCartMutation = useRemoveFromCart()
     const isInCart = useIsInCart(product._id)
@@ -59,26 +63,28 @@ export default function ProductCard({ product }: { product: Product }) {
                     </div>
                 </div>
             </Link>
-            <button
-                onClick={isInCart ? handleRemoveFromCart : handleAddToCart}
-                disabled={isLoading}
-                className={`mt-2 w-full py-2 px-4 rounded-md transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] ${
-                    isInCart
-                        ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                        : 'bg-accent text-accent-foreground shadow-soft hover:bg-accent/90 hover:shadow-glow'
-                }`}>
-                {isInCart ? (
-                    <>
-                        <Trash2 className="h-4 w-4" />
-                        {removeFromCartMutation.isPending ? 'Removing...' : 'Remove from Cart'}
-                    </>
-                ) : (
-                    <>
-                        <ShoppingCart className="h-4 w-4" />
-                        {addToCartMutation.isPending ? 'Adding...' : 'Add to Cart'}
-                    </>
-                )}
-            </button>
+            <div className="mt-2 flex items-center gap-2">
+                <button
+                    onClick={isInCart ? handleRemoveFromCart : handleAddToCart}
+                    disabled={isLoading}
+                    className={`flex-1 py-2 px-4 rounded-md transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] ${
+                        isInCart
+                            ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                            : 'bg-accent text-accent-foreground shadow-soft hover:bg-accent/90 hover:shadow-glow'
+                    }`}>
+                    {isInCart ? (
+                        <>
+                            <Trash2 className="h-4 w-4" />
+                            {removeFromCartMutation.isPending ? 'Removing...' : 'Remove'}
+                        </>
+                    ) : (
+                        <>
+                            <ShoppingCart className="h-4 w-4" />
+                            {addToCartMutation.isPending ? 'Adding...' : 'Add to Cart'}
+                        </>
+                    )}
+                </button>
+            </div>
         </div>
     )
 }

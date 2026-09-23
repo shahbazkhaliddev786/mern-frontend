@@ -97,6 +97,9 @@ export const http = {
             body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined
         }),
 
+    /** DELETE */
+    delete: <T>(endpoint: string, options?: RequestInit) => apiFetch<T>(endpoint, { ...options, method: 'DELETE' }),
+
     /** DELETE by ID */
     deleteById: <T = void>(endpoint: string, id: string | number, options?: RequestInit) =>
         apiFetch<T>(`${endpoint}/${id}`, { ...options, method: 'DELETE' })
@@ -107,6 +110,7 @@ export const getById = http.getById
 export const post = http.post
 export const put = http.put
 export const patch = http.patch
+export const del = http.delete
 export const deleteById = http.deleteById
 
 export { ApiError }
