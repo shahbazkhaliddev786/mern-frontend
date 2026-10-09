@@ -1,5 +1,6 @@
 import { Minus, Plus } from 'lucide-react'
 import { useUpdateCartItem } from '../hooks/useUpdateCartItem'
+import { MAX_CART_ITEM_QUANTITY } from '../services/cart.service'
 
 interface CartItemQuantityProps {
     productId: string
@@ -9,15 +10,16 @@ interface CartItemQuantityProps {
 
 export default function CartItemQuantity({ productId, currentQuantity, stock }: CartItemQuantityProps) {
     const updateMutation = useUpdateCartItem()
+    const maxQuantity = Math.min(stock, MAX_CART_ITEM_QUANTITY)
 
     const handleQuantityChange = (newQuantity: number) => {
-        if (newQuantity > 0 && newQuantity <= stock) {
+        if (newQuantity > 0 && newQuantity <= maxQuantity) {
             updateMutation.mutate({ productId, quantity: newQuantity })
         }
     }
 
     const canDecrement = currentQuantity > 1
-    const canIncrement = currentQuantity < stock
+    const canIncrement = currentQuantity < maxQuantity
 
     return (
         <div className="flex items-center gap-2">
@@ -41,7 +43,7 @@ export default function CartItemQuantity({ productId, currentQuantity, stock }: 
                 disabled={updateMutation.isPending}
                 className="w-12 border border-border rounded-md text-center py-1 px-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 min="1"
-                max={stock}
+                max={maxQuantity}
             />
 
             <button

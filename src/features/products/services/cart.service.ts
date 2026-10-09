@@ -1,6 +1,9 @@
 import { apiFetch } from '@/shared/services/api'
 import type { AddToCartPayload, Cart, CartItem } from '../types'
 
+/** Per-item quantity cap — matches the server's cart schema (mern-backend/src/validations/cart.schema.ts). */
+export const MAX_CART_ITEM_QUANTITY = 99
+
 export interface AddToCartResponse {
     message: string
     cart: Cart

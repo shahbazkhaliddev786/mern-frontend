@@ -3,6 +3,7 @@ import { Star, ShoppingCart, Trash2, PackageCheck, PackageX } from 'lucide-react
 import { useAddToCart } from '../hooks/useAddToCart'
 import { useRemoveFromCart } from '../hooks/useRemoveFromCart'
 import { useIsInCart } from '../hooks/useIsInCart'
+import { MAX_CART_ITEM_QUANTITY } from '../services/cart.service'
 import { ProductQuantitySelector } from './product-quantity-selector'
 import { Button } from '@/shared/components/ui/button'
 import type { Product } from '../types'
@@ -98,7 +99,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
             {inStock && !isInCart && (
                 <div className="flex flex-col gap-2">
                     <p className="text-sm font-semibold">Quantity</p>
-                    <ProductQuantitySelector value={quantity} max={product.stock} onChange={setQuantity} />
+                    <ProductQuantitySelector value={quantity} max={Math.min(product.stock, MAX_CART_ITEM_QUANTITY)} onChange={setQuantity} />
                 </div>
             )}
 
