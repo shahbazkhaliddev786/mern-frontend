@@ -24,3 +24,5 @@ export interface AuthResponse {
     refreshToken: string
     user: AuthUser
 }
+
+export type AuthTokens = Pick<AuthResponse, 'accessToken' | 'refreshToken'>

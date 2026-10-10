@@ -1,4 +1,6 @@
-import { apiFetch } from '@/shared/services/api'
+import { apiFetch, http } from '@/shared/services/api'
+import type { ApiResponse } from '@/shared/types/api'
+import type { AuthTokens } from '@/features/authentication/types'
 
 export interface UserProfileData {
     id: string
@@ -16,9 +18,17 @@ export interface ProfileResponse {
 
 export interface UpdateProfileData {
     name?: string
-    email?: string
-    password?: string
     profile?: FileList | File
+}
+
+export interface ChangePasswordPayload {
+    currentPassword: string
+    newPassword: string
+}
+
+export interface RequestEmailChangePayload {
+    newEmail: string
+    currentPassword: string
 }
 
 export const profileService = {
@@ -40,8 +50,6 @@ export const profileService = {
     updateProfile: async (data: UpdateProfileData): Promise<ProfileResponse> => {
         const formData = new FormData()
         if (data.name) formData.append('name', data.name)
-        if (data.email) formData.append('email', data.email)
-        if (data.password) formData.append('password', data.password)
 
         // Check if the user attached a file in the FileList or File
         if (data.profile) {
@@ -57,5 +65,24 @@ export const profileService = {
             body: formData
         })
         return raw as ProfileResponse
-    }
+    },
+
+    /**
+     * Change the password (requires the current one). Signs out other devices
+     * and returns fresh tokens that keep this one signed in.
+     * PATCH /v1/auth/password
+     */
+    changePassword: (data: ChangePasswordPayload) => http.patch<ApiResponse<AuthTokens>>('/v1/auth/password', data),
+
+    /**
+     * Start an email change: emails a code to the new address
+     * POST /v1/auth/email-change
+     */
+    requestEmailChange: (data: RequestEmailChangePayload) => http.post<ApiResponse<void>>('/v1/auth/email-change', data),
+
+    /**
+     * Finish an email change with the code sent to the new address
+     * POST /v1/auth/email-change/verify
+     */
+    confirmEmailChange: (otp: string) => http.post<ApiResponse<{ email: string }>>('/v1/auth/email-change/verify', { otp })
 }

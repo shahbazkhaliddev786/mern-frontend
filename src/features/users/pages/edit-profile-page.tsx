@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Camera, Loader2, Save } from 'lucide-react'
 import { useProfileQuery } from '../hooks/useProfileQuery'
 import { useUpdateProfileMutation } from '../hooks/useUpdateProfileMutation'
+import { ChangeEmailCard } from '../components/change-email-card'
+import { ChangePasswordCard } from '../components/change-password-card'
 import { editProfileSchema, type EditProfileFormData } from '@/features/authentication/schemas/auth.schema'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -27,9 +29,7 @@ export function EditProfilePage() {
     } = useForm<EditProfileFormData>({
         resolver: zodResolver(editProfileSchema),
         defaultValues: {
-            name: '',
-            email: '',
-            password: ''
+            name: ''
         }
     })
 
@@ -37,7 +37,6 @@ export function EditProfilePage() {
     useEffect(() => {
         if (profileData?.data) {
             setValue('name', profileData.data.name)
-            setValue('email', profileData.data.email)
         }
     }, [profileData, setValue])
 
@@ -56,11 +55,7 @@ export function EditProfilePage() {
     }, [profileFile])
 
     const onSubmit = (data: EditProfileFormData) => {
-        // Filter out empty password
-        const payload = { ...data }
-        if (!payload.password) delete payload.password
-
-        updateProfile(payload, {
+        updateProfile(data, {
             onSuccess: () => {
                 navigate('/profile')
             }
@@ -124,35 +119,6 @@ export function EditProfilePage() {
                                 />
                                 {errors.name && <p className="text-xs font-medium text-destructive mt-1 ml-1">{errors.name.message}</p>}
                             </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="email" className="text-sm font-semibold ml-1">
-                                    Email Address
-                                </Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="your@email.com"
-                                    {...register('email')}
-                                    className={`h-12 rounded-xl border-border bg-background focus:ring-2 focus:ring-primary/20 transition-all ${errors.email ? 'border-destructive ring-destructive/20' : ''}`}
-                                />
-                                {errors.email && <p className="text-xs font-medium text-destructive mt-1 ml-1">{errors.email.message}</p>}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="password" className="text-sm font-semibold ml-1">
-                                    New Password
-                                </Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    placeholder="••••••••"
-                                    {...register('password')}
-                                    className={`h-12 rounded-xl border-border bg-background focus:ring-2 focus:ring-primary/20 transition-all ${errors.password ? 'border-destructive ring-destructive/20' : ''}`}
-                                />
-                                <p className="text-xs text-muted-foreground mt-1 ml-1">Leave blank if you don't want to change it</p>
-                                {errors.password && <p className="text-xs font-medium text-destructive mt-1 ml-1">{errors.password.message}</p>}
-                            </div>
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -185,6 +151,11 @@ export function EditProfilePage() {
                     </form>
                 </CardContent>
             </Card>
+
+            <div className="mt-8 space-y-8">
+                <ChangeEmailCard currentEmail={profileData?.data.email} />
+                <ChangePasswordCard />
+            </div>
         </section>
     )
 }

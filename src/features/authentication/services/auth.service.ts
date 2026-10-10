@@ -18,6 +18,13 @@ export interface ResendOtpPayload {
     email: string
 }
 
+export interface ResetPasswordPayload {
+    email: string
+    otp: string
+    newPassword: string
+    confirmPassword: string
+}
+
 export const authService = {
     /**
      * Register a new user
@@ -49,5 +56,15 @@ export const authService = {
     /**
      * Resend a fresh verification OTP to the user's email
      */
-    resendOtp: (data: ResendOtpPayload) => http.post<ApiResponse<void>>('/v1/auth/resend-otp', data)
+    resendOtp: (data: ResendOtpPayload) => http.post<ApiResponse<void>>('/v1/auth/resend-otp', data),
+
+    /**
+     * Email a password-reset code (responds the same whether or not the account exists)
+     */
+    forgotPassword: (email: string) => http.post<ApiResponse<void>>('/v1/auth/forgot-password', { email }),
+
+    /**
+     * Set a new password with the emailed reset code
+     */
+    resetPassword: (data: ResetPasswordPayload) => http.post<ApiResponse<void>>('/v1/auth/reset-password', data)
 }

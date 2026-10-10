@@ -105,6 +105,21 @@ export const http = {
         apiFetch<T>(`${endpoint}/${id}`, { ...options, method: 'DELETE' })
 }
 
+/**
+ * The message to show for a failed request: the first field error of a
+ * validation failure, otherwise the server's message, otherwise `fallback`.
+ */
+export function getErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof ApiError && error.data && typeof error.data === 'object' && 'errors' in error.data) {
+        const errors = (error.data as { errors?: unknown }).errors
+        const first: unknown = Array.isArray(errors) ? errors[0] : undefined
+        if (first && typeof first === 'object' && 'message' in first && typeof first.message === 'string' && first.message) {
+            return first.message
+        }
+    }
+    return error instanceof Error && error.message ? error.message : fallback
+}
+
 export const get = http.get
 export const getById = http.getById
 export const post = http.post

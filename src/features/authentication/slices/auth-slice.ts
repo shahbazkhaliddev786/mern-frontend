@@ -1,6 +1,6 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
 import { authService, type SignupPayload, type VerifyOtpPayload } from '../services/auth.service'
-import type { AuthUser, LoginDto } from '../types'
+import type { AuthTokens, AuthUser, LoginDto } from '../types'
 
 export const signupUser = createAsyncThunk('auth/signup', async (data: SignupPayload, { rejectWithValue }) => {
     try {
@@ -90,6 +90,22 @@ export const authSlice = createSlice({
                 localStorage.removeItem('accessToken')
                 localStorage.removeItem('refreshToken')
             }
+        },
+        // Keeps the signed-in user's details (shown in the header menu) in step with profile and email changes
+        updateUser: (state, action: PayloadAction<Partial<AuthUser>>) => {
+            if (state.user) {
+                state.user = { ...state.user, ...action.payload }
+            }
+        },
+        // Stores a fresh token pair, such as the one issued after a password change
+        setTokens: (state, action: PayloadAction<AuthTokens>) => {
+            state.accessToken = action.payload.accessToken
+            state.refreshToken = action.payload.refreshToken
+
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('accessToken', action.payload.accessToken)
+                localStorage.setItem('refreshToken', action.payload.refreshToken)
+            }
         }
     },
     extraReducers: (builder) => {
@@ -168,6 +184,6 @@ export const authSlice = createSlice({
     }
 })
 
-export const { logout } = authSlice.actions
+export const { logout, updateUser, setTokens } = authSlice.actions
 
 export default authSlice.reducer
