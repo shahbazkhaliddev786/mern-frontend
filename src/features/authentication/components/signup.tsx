@@ -82,8 +82,12 @@ export default function Signup() {
 
                     <div className="space-y-2">
                         <Label htmlFor="profile">Profile Picture (Optional)</Label>
-                        <Input id="profile" type="file" accept="image/*" {...register('profile')} />
-                        {errors.profile && <span className="text-xs text-destructive">{errors.profile.message as string}</span>}
+                        <Input id="profile" type="file" accept="image/jpeg,image/png,image/gif,image/webp" {...register('profile')} />
+                        {errors.profile ? (
+                            <span className="text-xs text-destructive">{errors.profile.message as string}</span>
+                        ) : (
+                            <span className="text-xs text-muted-foreground">JPEG, PNG, GIF or WEBP up to 2MB</span>
+                        )}
                     </div>
 
                     <Button type="submit" variant="accent" disabled={isLoading} className="w-full" size="lg">

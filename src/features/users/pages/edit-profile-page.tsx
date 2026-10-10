@@ -97,12 +97,18 @@ export function EditProfilePage() {
                                     htmlFor="profile-upload"
                                     className="absolute bottom-1 right-1 p-3 bg-accent text-accent-foreground rounded-full cursor-pointer shadow-glow hover:scale-110 active:scale-95 transition-all duration-200 border-4 border-background">
                                     <Camera className="h-5 w-5" />
-                                    <input id="profile-upload" type="file" className="hidden" accept="image/*" {...register('profile')} />
+                                    <input
+                                        id="profile-upload"
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/jpeg,image/png,image/gif,image/webp"
+                                        {...register('profile')}
+                                    />
                                 </label>
                             </div>
                             <div className="text-center">
                                 <p className="text-sm font-medium text-foreground">Profile Picture</p>
-                                <p className="text-xs text-muted-foreground mt-1">PNG, JPG or GIF up to 2MB</p>
+                                <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, GIF or WEBP up to 2MB</p>
                             </div>
                         </div>
 
