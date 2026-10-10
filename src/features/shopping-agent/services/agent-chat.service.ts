@@ -5,6 +5,7 @@ import type { AgentEvent } from '../types'
 import { createSseParser } from './sse'
 
 const CHAT_URL = '/api/v1/agent/chat'
+const AVATAR_UPLOAD_URL = '/api/v1/agent/uploads/avatar'
 const REFRESH_URL = '/api/v1/auth/refresh-token'
 
 export type ChatFailureKind = 'unavailable' | 'signin' | 'invalid' | 'network' | 'aborted'
@@ -28,6 +29,8 @@ export const FAILURE_MESSAGES = {
 export interface StreamChatOptions {
     /** A new message; or `resume` to answer a pending confirmation (spec 009). */
     message?: string
+    /** An attached image from `uploadAvatar` (spec 012); sent with a new message only. */
+    uploadId?: string
     resume?: { interruptId: string; approved: boolean }
     threadId?: string | null
     signal?: AbortSignal
@@ -70,7 +73,13 @@ async function readMessage(response: Response): Promise<string | undefined> {
     }
 }
 
-export async function* streamChat({ message, resume, threadId, signal, onTokensRefreshed }: StreamChatOptions): AsyncGenerator<AgentEvent> {
+function chatBody({ message, uploadId, resume, threadId }: StreamChatOptions) {
+    if (resume) return { threadId, resume }
+    return { message, ...(threadId ? { threadId } : {}), ...(uploadId ? { uploadId } : {}) }
+}
+
+export async function* streamChat(options: StreamChatOptions): AsyncGenerator<AgentEvent> {
+    const { signal, onTokensRefreshed } = options
     const send = (token: string | null) =>
         fetch(CHAT_URL, {
             method: 'POST',
@@ -79,7 +88,7 @@ export async function* streamChat({ message, resume, threadId, signal, onTokensR
                 Accept: 'text/event-stream',
                 ...(token ? { Authorization: `Bearer ${token}` } : {})
             },
-            body: JSON.stringify(resume ? { threadId, resume } : threadId ? { message, threadId } : { message }),
+            body: JSON.stringify(chatBody(options)),
             ...(signal ? { signal } : {})
         })
 
@@ -120,4 +129,57 @@ export async function* streamChat({ message, resume, threadId, signal, onTokensR
         throw new ChatFailure('network', FAILURE_MESSAGES.network)
     }
     if (!sawDone) throw new ChatFailure('network', FAILURE_MESSAGES.network)
+}
+
+export interface UploadedImage {
+    uploadId: string
+    name: string
+    size: number
+}
+
+/**
+ * Hands an image to the server for the agent's `upload_avatar` tool (spec 012). The server keeps it
+ * for an hour; the model only ever sees the returned id, never the image.
+ */
+export async function uploadAvatar(
+    file: File,
+    { signal, onTokensRefreshed }: Pick<StreamChatOptions, 'signal' | 'onTokensRefreshed'> = {}
+): Promise<UploadedImage> {
+    const send = (token: string | null) => {
+        const form = new FormData()
+        form.append('profile', file)
+        return fetch(AVATAR_UPLOAD_URL, {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: form,
+            ...(signal ? { signal } : {})
+        })
+    }
+
+    let response: Response
+    try {
+        response = await send(storedToken('accessToken'))
+        if (response.status === 401) {
+            const fresh = await refreshTokens(onTokensRefreshed)
+            if (!fresh) throw new ChatFailure('signin', FAILURE_MESSAGES.signin)
+            response = await send(fresh)
+            if (response.status === 401) throw new ChatFailure('signin', FAILURE_MESSAGES.signin)
+        }
+    } catch (error) {
+        if (error instanceof ChatFailure) throw error
+        if (isAbort(error)) throw new ChatFailure('aborted', 'Stopped')
+        throw new ChatFailure('network', FAILURE_MESSAGES.network)
+    }
+
+    if (response.status === 503) throw new ChatFailure('unavailable', FAILURE_MESSAGES.unavailable)
+    if (response.status === 400) throw new ChatFailure('invalid', (await readMessage(response)) ?? "That picture couldn't be attached.")
+    if (!response.ok) throw new ChatFailure('network', FAILURE_MESSAGES.network)
+    try {
+        const body = (await response.json()) as { data?: Partial<UploadedImage> }
+        const data = body.data
+        if (!data?.uploadId || !data.name || typeof data.size !== 'number') throw new Error('bad body')
+        return { uploadId: data.uploadId, name: data.name, size: data.size }
+    } catch {
+        throw new ChatFailure('network', FAILURE_MESSAGES.network)
+    }
 }

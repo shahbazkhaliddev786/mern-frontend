@@ -416,3 +416,136 @@ describe('after the agent changes the name (spec 011)', () => {
         expect(fake.requests[1]!.url).toBe('/api/v1/auth/profile')
     })
 })
+
+describe('attaching a picture (spec 012)', () => {
+    const image = (name = 'me.png', type = 'image/png', bytes = 1000) => new File([new Uint8Array(bytes)], name, { type })
+    const uploaded = (name = 'me.png') =>
+        jsonResponse(201, { status: 'success', message: 'Image received', data: { uploadId: 'a'.repeat(24), name, size: 1000 } })
+
+    beforeEach(() => {
+        vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:preview'), revokeObjectURL: vi.fn() }))
+    })
+
+    async function openAndAttach(file: File) {
+        const user = userEvent.setup({ applyAccept: false })
+        await user.click(screen.getByRole('button', { name: 'Open the shopping assistant' }))
+        await screen.findByRole('textbox', { name: 'Message the shopping assistant' })
+        await user.upload(screen.getByTestId('attach-input'), file)
+        return user
+    }
+
+    it('uploads the image as FormData with the token, then sends its uploadId with the message', async () => {
+        const fake = fakeFetch(
+            () => uploaded(),
+            () => streamingResponse([sse('token', { text: 'Nice picture.' }), sse('done', { threadId: 't' })])
+        )
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = await openAndAttach(image())
+        const chip = await screen.findByTestId('attachment-chip')
+        await within(chip).findByText('Ready to send')
+
+        const upload = fake.requests[0]!
+        expect(upload.url).toBe('/api/v1/agent/uploads/avatar')
+        expect(upload.authorization).toBe('Bearer access')
+        expect((upload.form?.get('profile') as File).name).toBe('me.png')
+
+        await user.type(screen.getByRole('textbox', { name: 'Message the shopping assistant' }), 'make this my picture{Enter}')
+        await screen.findByText('Nice picture.')
+        expect(fake.requests[1]!.body).toEqual({ message: 'make this my picture', uploadId: 'a'.repeat(24) })
+        expect(screen.queryByTestId('attachment-chip')).toBeNull()
+        expect(screen.getByRole('img', { name: 'me.png' })).toHaveAttribute('src', 'blob:preview')
+    })
+
+    it('sends a default message when only a picture is attached', async () => {
+        const fake = fakeFetch(
+            () => uploaded(),
+            () => streamingResponse([sse('done', { threadId: 't' })])
+        )
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = await openAndAttach(image())
+        await screen.findByText('Ready to send')
+        await user.click(screen.getByRole('button', { name: 'Send' }))
+        await waitFor(() => expect(fake.requests).toHaveLength(2))
+        expect(fake.requests[1]!.body).toEqual({ message: "Here's a picture.", uploadId: 'a'.repeat(24) })
+    })
+
+    it('refuses a wrong type or an oversize file in the browser, without uploading', async () => {
+        const fake = fakeFetch()
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = await openAndAttach(image('notes.pdf', 'application/pdf'))
+        expect(await screen.findByText('Only JPEG, PNG, GIF or WEBP images are allowed')).toBeInTheDocument()
+        await user.upload(screen.getByTestId('attach-input'), image('big.png', 'image/png', 2 * 1024 * 1024 + 1))
+        expect(await screen.findByText('Each image must be 2 MB or smaller')).toBeInTheDocument()
+        expect(fake.requests).toHaveLength(0)
+        expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled()
+    })
+
+    it("shows the server's message when the upload is refused", async () => {
+        vi.stubGlobal('fetch', fakeFetch(() => jsonResponse(400, { status: 'error', message: 'Only JPEG, PNG, GIF or WEBP images are allowed' })).fn)
+        renderLauncher(alice)
+        await openAndAttach(image())
+        expect(await screen.findByText('Only JPEG, PNG, GIF or WEBP images are allowed')).toBeInTheDocument()
+    })
+
+    it('removes the chip, and the next message goes without an uploadId', async () => {
+        const fake = fakeFetch(
+            () => uploaded(),
+            () => streamingResponse([sse('done', { threadId: 't' })])
+        )
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = await openAndAttach(image())
+        await screen.findByText('Ready to send')
+        await user.click(screen.getByRole('button', { name: 'Remove attachment' }))
+        expect(screen.queryByTestId('attachment-chip')).toBeNull()
+        await user.type(screen.getByRole('textbox', { name: 'Message the shopping assistant' }), 'hello{Enter}')
+        await waitFor(() => expect(fake.requests).toHaveLength(2))
+        expect(fake.requests[1]!.body).toEqual({ message: 'hello' })
+    })
+
+    it('shows only the file name after a reload', async () => {
+        const fake = fakeFetch(
+            () => uploaded(),
+            () => streamingResponse([sse('done', { threadId: 't' })])
+        )
+        vi.stubGlobal('fetch', fake.fn)
+        const first = renderLauncher(alice)
+        const user = await openAndAttach(image())
+        await screen.findByText('Ready to send')
+        await user.click(screen.getByRole('button', { name: 'Send' }))
+        await waitFor(() => expect(fake.requests).toHaveLength(2))
+        await waitFor(() => expect(localStorage.getItem('aljo.agentChat.alice-id')).toContain('me.png'))
+        expect(localStorage.getItem('aljo.agentChat.alice-id')).not.toContain('blob:')
+        first.unmount()
+
+        renderLauncher(alice)
+        await userEvent.setup().click(screen.getByRole('button', { name: 'Open the shopping assistant' }))
+        expect(await screen.findByText('me.png')).toBeInTheDocument()
+        expect(screen.queryByRole('img', { name: 'me.png' })).toBeNull()
+    })
+
+    it("updates the signed-in user's picture after upload_avatar", async () => {
+        const fake = fakeFetch(
+            () =>
+                streamingResponse([
+                    sse('tool_end', { tool: 'upload_avatar', ok: true }),
+                    sse('token', { text: 'Your new picture is set.' }),
+                    sse('done', { threadId: 't' })
+                ]),
+            () =>
+                jsonResponse(200, {
+                    status: 'success',
+                    message: 'ok',
+                    data: { id: 'alice-id', name: 'Alice', email: 'alice@example.com', profile: 'https://res.cloudinary.com/x/new.png' }
+                })
+        )
+        vi.stubGlobal('fetch', fake.fn)
+        const { store } = renderLauncher(alice)
+        await openAndSend('yes')
+        await screen.findByText('Your new picture is set.')
+        await waitFor(() => expect(store.getState().auth.user?.profile).toBe('https://res.cloudinary.com/x/new.png'))
+    })
+})

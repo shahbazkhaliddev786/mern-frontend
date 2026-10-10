@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ChatFailure, streamChat } from '../services/agent-chat.service'
+import { ChatFailure, streamChat, uploadAvatar } from '../services/agent-chat.service'
 import { fakeFetch, jsonResponse, sse, streamingResponse } from './fake-stream'
 
 const collect = async (gen: AsyncGenerator<unknown>) => {
@@ -93,5 +93,31 @@ describe('streamChat resume (spec 009)', () => {
         vi.stubGlobal('fetch', fake.fn)
         await collect(streamChat({ resume: { interruptId: 'int-1', approved: false }, threadId: 't1' }))
         expect(fake.requests[0]!.body).toEqual({ threadId: 't1', resume: { interruptId: 'int-1', approved: false } })
+    })
+})
+
+describe('uploadAvatar (spec 012)', () => {
+    const file = new File([new Uint8Array(10)], 'me.png', { type: 'image/png' })
+
+    it('refreshes once on 401 and retries the upload with the new token', async () => {
+        const fake = fakeFetch(
+            () => jsonResponse(401, { message: 'expired' }),
+            () => jsonResponse(200, { data: { accessToken: 'new-access', refreshToken: 'new-refresh' } }),
+            () => jsonResponse(201, { data: { uploadId: 'b'.repeat(24), name: 'me.png', size: 10 } })
+        )
+        vi.stubGlobal('fetch', fake.fn)
+        await expect(uploadAvatar(file)).resolves.toEqual({ uploadId: 'b'.repeat(24), name: 'me.png', size: 10 })
+        expect(fake.requests.map((r) => r.url)).toEqual([
+            '/api/v1/agent/uploads/avatar',
+            '/api/v1/auth/refresh-token',
+            '/api/v1/agent/uploads/avatar'
+        ])
+        expect(fake.requests[2]!.authorization).toBe('Bearer new-access')
+        expect(fake.requests[2]!.form?.get('profile')).toBeInstanceOf(File)
+    })
+
+    it('maps 503 to unavailable', async () => {
+        vi.stubGlobal('fetch', fakeFetch(() => jsonResponse(503, {})).fn)
+        await expect(uploadAvatar(file)).rejects.toMatchObject({ kind: 'unavailable' })
     })
 })

@@ -6,7 +6,8 @@ import Composer from './Composer'
 import MessageList from './MessageList'
 
 export default function ChatPanel({ onNavigate }: { onNavigate?: () => void }) {
-    const { messages, streaming, tool, pendingConfirmation, send, respond, stop, retry, newChat } = useAgentChat()
+    const { messages, streaming, tool, pendingConfirmation, attachment, attach, removeAttachment, send, respond, stop, retry, newChat } =
+        useAgentChat()
     return (
         <div className="flex h-full min-h-0 flex-col">
             <SheetHeader className="border-b pr-12">
@@ -32,6 +33,9 @@ export default function ChatPanel({ onNavigate }: { onNavigate?: () => void }) {
                 blockedReason={pendingConfirmation ? 'Confirm or cancel the action above first.' : null}
                 onSend={(text) => void send(text)}
                 onStop={stop}
+                attachment={attachment}
+                onAttach={(file) => void attach(file)}
+                onRemoveAttachment={removeAttachment}
             />
         </div>
     )

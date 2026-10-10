@@ -26,4 +26,15 @@ export interface ChatMessage {
     error?: { message: string; retryable: boolean; signIn?: boolean }
     /** Set on the assistant message that asked for a confirmation. */
     confirmation?: Confirmation
+    /** An image the customer attached (spec 012). `previewUrl` is an object URL and isn't saved. */
+    attachment?: { name: string; uploadId?: string; previewUrl?: string }
+}
+
+/** The image waiting in the composer (spec 012). */
+export interface Attachment {
+    status: 'uploading' | 'ready' | 'error'
+    name: string
+    previewUrl: string
+    uploadId?: string
+    error?: string
 }

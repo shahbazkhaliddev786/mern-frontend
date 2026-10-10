@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { RotateCcw } from 'lucide-react'
+import { Image as ImageIcon, RotateCcw } from 'lucide-react'
 import type { ChatMessage } from '../types'
 import AssistantMessage from './AssistantMessage'
 import ConfirmCard from './ConfirmCard'
@@ -35,7 +35,20 @@ export default function MessageList({ messages, tool, onRetry, onConfirm, busy, 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4" aria-live="polite">
             {messages.map((message) =>
                 message.role === 'user' ? (
-                    <div key={message.id} className="flex justify-end">
+                    <div key={message.id} className="flex flex-col items-end gap-1">
+                        {message.attachment &&
+                            (message.attachment.previewUrl ? (
+                                <img
+                                    src={message.attachment.previewUrl}
+                                    alt={message.attachment.name}
+                                    className="max-h-40 max-w-[60%] rounded-xl border object-cover"
+                                />
+                            ) : (
+                                <p className="text-muted-foreground flex max-w-[85%] items-center gap-1 text-xs">
+                                    <ImageIcon className="size-3 shrink-0" aria-hidden />
+                                    <span className="truncate">{message.attachment.name}</span>
+                                </p>
+                            ))}
                         <p className="bg-primary text-primary-foreground max-w-[85%] rounded-2xl rounded-br-sm px-3 py-2 text-sm whitespace-pre-wrap">
                             {message.text}
                         </p>

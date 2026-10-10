@@ -24,6 +24,8 @@ export const jsonResponse = (status: number, body: unknown) =>
 export interface RecordedRequest {
     url: string
     body: Record<string, unknown> | undefined
+    /** Set for multipart requests (the avatar upload). */
+    form: FormData | undefined
     authorization: string | null
 }
 
@@ -35,6 +37,7 @@ export function fakeFetch(...responders: ((init: RequestInit | undefined) => Res
         requests.push({
             url: String(input),
             body: typeof init?.body === 'string' ? (JSON.parse(init.body) as Record<string, unknown>) : undefined,
+            form: init?.body instanceof FormData ? init.body : undefined,
             authorization: headers.get('Authorization')
         })
         if (init?.signal?.aborted) throw new DOMException('The operation was aborted.', 'AbortError')
