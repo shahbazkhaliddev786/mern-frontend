@@ -3,9 +3,11 @@ import rehypeSanitize from 'rehype-sanitize'
 import { Link } from 'react-router-dom'
 
 // Assistant text is Markdown rendered without raw HTML and sanitized (security.md §11).
-// Only links inside the store work: the agent gives relative product links; anything
-// else shows as plain text. Images are never rendered.
+// Only two kinds of link work: store pages (relative product links) and Stripe Checkout,
+// where the customer pays after place_order (spec 010). Anything else shows as plain text.
+// Images are never rendered.
 const isStoreLink = (href: string | undefined): href is string => Boolean(href && href.startsWith('/') && !href.startsWith('//'))
+const isStripeCheckout = (href: string | undefined): href is string => Boolean(href && href.startsWith('https://checkout.stripe.com/'))
 
 export default function AssistantMessage({ text, onNavigate }: { text: string; onNavigate?: () => void }) {
     const components: Components = {
@@ -14,6 +16,10 @@ export default function AssistantMessage({ text, onNavigate }: { text: string; o
                 <Link to={href} onClick={onNavigate} className="text-primary font-medium underline underline-offset-2">
                     {children}
                 </Link>
+            ) : isStripeCheckout(href) ? (
+                <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary font-medium underline underline-offset-2">
+                    {children}
+                </a>
             ) : (
                 <span>{children}</span>
             ),

@@ -227,6 +227,18 @@ describe('rendering safety', () => {
         expect(within(message).queryByRole('link', { name: 'Win a prize' })).toBeNull()
         expect(message).toHaveTextContent('Win a prize')
     })
+
+    it('links Stripe Checkout in a new tab, and nothing that only looks like it', async () => {
+        const answer = '[Pay securely](https://checkout.stripe.com/c/pay/cs_test_1) or [this](https://checkout.stripe.com.evil.example/x)'
+        vi.stubGlobal('fetch', fakeFetch(() => streamingResponse([sse('token', { text: answer }), sse('done', { threadId: 't' })])).fn)
+        renderLauncher(alice)
+        await openAndSend('check out')
+        const pay = await screen.findByRole('link', { name: 'Pay securely' })
+        expect(pay).toHaveAttribute('href', 'https://checkout.stripe.com/c/pay/cs_test_1')
+        expect(pay).toHaveAttribute('target', '_blank')
+        expect(pay).toHaveAttribute('rel', 'noopener noreferrer')
+        expect(screen.queryByRole('link', { name: 'this' })).toBeNull()
+    })
 })
 
 describe('the visible conversation across reloads', () => {
