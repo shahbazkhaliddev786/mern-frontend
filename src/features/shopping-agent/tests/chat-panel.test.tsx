@@ -590,3 +590,33 @@ describe('per-user limits (backend spec 014)', () => {
         expect(await within(await screen.findByTestId('attachment-chip')).findByText(message)).toBeInTheDocument()
     })
 })
+
+describe('card numbers and passwords stay in the browser (backend spec 016)', () => {
+    const hint = "For your security, don't share card numbers or passwords here. Payment happens only on Stripe's checkout page."
+
+    it('refuses a card number or a password before sending, and keeps the text', async () => {
+        const fake = fakeFetch()
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = userEvent.setup()
+        await user.click(screen.getByRole('button', { name: 'Open the shopping assistant' }))
+        const box = await screen.findByRole('textbox', { name: 'Message the shopping assistant' })
+        for (const text of ['my card is 4242 4242 4242 4242', 'my password is Summer2024!']) {
+            await user.type(box, `${text}{Enter}`)
+            expect(await screen.findByRole('alert')).toHaveTextContent(hint)
+            expect(box).toHaveValue(text)
+            await user.clear(box)
+            expect(screen.queryByRole('alert')).toBeNull()
+        }
+        expect(fake.requests).toHaveLength(0)
+    })
+
+    it('sends ordinary messages with numbers', async () => {
+        const fake = fakeFetch(() => streamingResponse([sse('done', { threadId: 't' })]))
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        await openAndSend('2 of the blue ones under $50, about order #1A2B3C4D')
+        await waitFor(() => expect(fake.requests).toHaveLength(1))
+        expect(screen.queryByRole('alert')).toBeNull()
+    })
+})

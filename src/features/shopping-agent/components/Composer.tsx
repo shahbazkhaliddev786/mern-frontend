@@ -2,6 +2,7 @@ import { useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent 
 import { Loader2, Paperclip, Send, Square, X } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { IMAGE_TYPES } from '../hooks/useAgentChat'
+import { containsSensitive, SENSITIVE_HINT } from '../services/sensitive'
 import type { Attachment } from '../types'
 
 export const MAX_MESSAGE_LENGTH = 2000
@@ -22,6 +23,8 @@ const ATTACHMENT_STATUS = { uploading: 'Uploading…', ready: 'Ready to send' } 
 
 export default function Composer({ streaming, blockedReason, onSend, onStop, attachment, onAttach, onRemoveAttachment }: ComposerProps) {
     const [text, setText] = useState('')
+    // Set when the text holds a card number or password: it isn't sent (backend spec 016).
+    const [warning, setWarning] = useState<string | null>(null)
     const fileInput = useRef<HTMLInputElement>(null)
     const hasReadyImage = attachment?.status === 'ready'
     const canSend = !streaming && !blockedReason && attachment?.status !== 'uploading' && (text.trim().length > 0 || hasReadyImage)
@@ -36,6 +39,10 @@ export default function Composer({ streaming, blockedReason, onSend, onStop, att
     const submit = (event?: FormEvent) => {
         event?.preventDefault()
         if (!canSend) return
+        if (containsSensitive(text)) {
+            setWarning(SENSITIVE_HINT)
+            return
+        }
         onSend(text)
         setText('')
     }
@@ -51,6 +58,11 @@ export default function Composer({ streaming, blockedReason, onSend, onStop, att
     return (
         <form onSubmit={submit} className="space-y-2 border-t p-3">
             {blockedReason && <p className="text-muted-foreground text-xs">{blockedReason}</p>}
+            {warning && (
+                <p role="alert" className="text-destructive text-xs">
+                    {warning}
+                </p>
+            )}
             {attachment && (
                 <div className="bg-muted/50 flex items-center gap-2 rounded-md border p-2" data-testid="attachment-chip">
                     <img src={attachment.previewUrl} alt="" className="size-10 shrink-0 rounded object-cover" />
@@ -96,7 +108,10 @@ export default function Composer({ streaming, blockedReason, onSend, onStop, att
                     aria-label="Message the shopping assistant"
                     disabled={Boolean(blockedReason)}
                     value={text}
-                    onChange={(event) => setText(event.target.value.slice(0, MAX_MESSAGE_LENGTH))}
+                    onChange={(event) => {
+                        setText(event.target.value.slice(0, MAX_MESSAGE_LENGTH))
+                        setWarning(null)
+                    }}
                     onKeyDown={onKeyDown}
                     rows={2}
                     maxLength={MAX_MESSAGE_LENGTH}
