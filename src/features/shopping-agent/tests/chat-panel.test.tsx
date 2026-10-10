@@ -376,6 +376,23 @@ describe('confirmation card (spec 009)', () => {
         expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
     })
 
+    it('reopens the card when the answer is over the limit (spec 014)', async () => {
+        const limited = "You've sent a lot of messages in a short time. Please wait about 3 minutes and try again."
+        vi.stubGlobal(
+            'fetch',
+            fakeFetch(
+                () => pause(),
+                () => jsonResponse(429, { status: 'error', message: limited })
+            ).fn
+        )
+        renderLauncher(alice)
+        const user = await openAndSend('empty my cart')
+        const card = await screen.findByRole('group', { name: 'Confirm this action' })
+        await user.click(within(card).getByRole('button', { name: 'Confirm' }))
+        expect(await screen.findByText(limited)).toBeInTheDocument()
+        expect(within(card).getByRole('button', { name: 'Confirm' })).toBeEnabled()
+    })
+
     it('keeps a pending card across a reload, and it can still be answered', async () => {
         const fake = fakeFetch(
             () => pause('int-9'),
@@ -547,5 +564,29 @@ describe('attaching a picture (spec 012)', () => {
         await openAndSend('yes')
         await screen.findByText('Your new picture is set.')
         await waitFor(() => expect(store.getState().auth.user?.profile).toBe('https://res.cloudinary.com/x/new.png'))
+    })
+})
+
+describe('per-user limits (backend spec 014)', () => {
+    const limited = "You've sent a lot of messages in a short time. Please wait about 4 minutes and try again."
+
+    it("shows the server's message without Try again", async () => {
+        vi.stubGlobal('fetch', fakeFetch(() => jsonResponse(429, { status: 'error', message: limited })).fn)
+        renderLauncher(alice)
+        await openAndSend('hello')
+        expect(await screen.findByText(limited)).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
+    })
+
+    it('shows an upload refusal in the attachment chip', async () => {
+        vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:preview'), revokeObjectURL: vi.fn() }))
+        const message = "You've made a lot of changes in a short time. Please wait about 1 hour and try again."
+        vi.stubGlobal('fetch', fakeFetch(() => jsonResponse(429, { status: 'error', message })).fn)
+        renderLauncher(alice)
+        const user = userEvent.setup({ applyAccept: false })
+        await user.click(screen.getByRole('button', { name: 'Open the shopping assistant' }))
+        await screen.findByRole('textbox', { name: 'Message the shopping assistant' })
+        await user.upload(screen.getByTestId('attach-input'), new File([new Uint8Array(10)], 'me.png', { type: 'image/png' }))
+        expect(await within(await screen.findByTestId('attachment-chip')).findByText(message)).toBeInTheDocument()
     })
 })

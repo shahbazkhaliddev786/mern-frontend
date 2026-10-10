@@ -8,7 +8,7 @@ const CHAT_URL = '/api/v1/agent/chat'
 const AVATAR_UPLOAD_URL = '/api/v1/agent/uploads/avatar'
 const REFRESH_URL = '/api/v1/auth/refresh-token'
 
-export type ChatFailureKind = 'unavailable' | 'signin' | 'invalid' | 'network' | 'aborted'
+export type ChatFailureKind = 'unavailable' | 'signin' | 'invalid' | 'limited' | 'network' | 'aborted'
 
 export class ChatFailure extends Error {
     readonly kind: ChatFailureKind
@@ -23,7 +23,8 @@ export class ChatFailure extends Error {
 export const FAILURE_MESSAGES = {
     unavailable: "The shopping assistant isn't available right now.",
     signin: 'Please sign in again to keep chatting.',
-    network: 'The connection dropped. Try again.'
+    network: 'The connection dropped. Try again.',
+    limited: "You've sent a lot of messages in a short time. Please wait a few minutes and try again."
 } as const
 
 export interface StreamChatOptions {
@@ -109,6 +110,8 @@ export async function* streamChat(options: StreamChatOptions): AsyncGenerator<Ag
 
     if (response.status === 503) throw new ChatFailure('unavailable', FAILURE_MESSAGES.unavailable)
     if (response.status === 400) throw new ChatFailure('invalid', (await readMessage(response)) ?? 'That message could not be sent.')
+    // Per-user limits (backend spec 014): the server says how long to wait.
+    if (response.status === 429) throw new ChatFailure('limited', (await readMessage(response)) ?? FAILURE_MESSAGES.limited)
     if (!response.ok || !response.body) throw new ChatFailure('network', FAILURE_MESSAGES.network)
 
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader()
@@ -173,6 +176,7 @@ export async function uploadAvatar(
 
     if (response.status === 503) throw new ChatFailure('unavailable', FAILURE_MESSAGES.unavailable)
     if (response.status === 400) throw new ChatFailure('invalid', (await readMessage(response)) ?? "That picture couldn't be attached.")
+    if (response.status === 429) throw new ChatFailure('limited', (await readMessage(response)) ?? FAILURE_MESSAGES.limited)
     if (!response.ok) throw new ChatFailure('network', FAILURE_MESSAGES.network)
     try {
         const body = (await response.json()) as { data?: Partial<UploadedImage> }
