@@ -1,6 +1,7 @@
 import Header from '../components/header'
 import Footer from '../components/footer'
 import { Outlet } from 'react-router-dom'
+import { ChatLauncher } from '@/features/shopping-agent'
 
 export default function PageLayout() {
     return (
@@ -10,6 +11,7 @@ export default function PageLayout() {
                 <Outlet />
             </main>
             <Footer />
+            <ChatLauncher />
         </div>
     )
 }
