@@ -3,16 +3,20 @@ import { Link } from 'react-router-dom'
 import { RotateCcw } from 'lucide-react'
 import type { ChatMessage } from '../types'
 import AssistantMessage from './AssistantMessage'
+import ConfirmCard from './ConfirmCard'
 import ToolStatus from './ToolStatus'
 
 interface MessageListProps {
     messages: ChatMessage[]
     tool: { label: string } | null
     onRetry: (assistantId: string) => void
+    onConfirm: (assistantId: string, approved: boolean) => void
+    /** True while a reply streams: confirmation buttons wait for it. */
+    busy: boolean
     onNavigate?: () => void
 }
 
-export default function MessageList({ messages, tool, onRetry, onNavigate }: MessageListProps) {
+export default function MessageList({ messages, tool, onRetry, onConfirm, busy, onNavigate }: MessageListProps) {
     const endRef = useRef<HTMLDivElement>(null)
     const last = messages.at(-1)
     useEffect(() => {
@@ -43,6 +47,13 @@ export default function MessageList({ messages, tool, onRetry, onNavigate }: Mes
                             <p className="text-muted-foreground text-sm" aria-label="Assistant is typing">
                                 …
                             </p>
+                        )}
+                        {message.confirmation && (
+                            <ConfirmCard
+                                confirmation={message.confirmation}
+                                disabled={busy}
+                                onAnswer={(approved) => onConfirm(message.id, approved)}
+                            />
                         )}
                         {message.status === 'stopped' && <p className="text-muted-foreground text-xs">Stopped.</p>}
                         {message.status === 'error' && message.error && (

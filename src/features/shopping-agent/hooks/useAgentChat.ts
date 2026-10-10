@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { setTokens } from '@/features/authentication/slices/auth-slice'
 import { useAppDispatch, useAppSelector } from '@/shared/store/hooks'
-import { ChatFailure, FAILURE_MESSAGES, streamChat } from '../services/agent-chat.service'
-import type { ChatMessage } from '../types'
+import { ChatFailure, FAILURE_MESSAGES, streamChat, type StreamChatOptions } from '../services/agent-chat.service'
+import type { ChatMessage, Confirmation } from '../types'
 
 // The visible conversation survives a reload (spec 007). The server keeps the real memory;
 // this is display only, saved per user so another account on the same browser starts fresh.
@@ -28,6 +28,9 @@ type Action =
     | { type: 'fail'; error: NonNullable<ChatMessage['error']> }
     | { type: 'stopped' }
     | { type: 'removeTurn'; assistantId: string }
+    | { type: 'confirm'; confirmation: Confirmation }
+    | { type: 'answer'; messageId: string; approved: boolean; assistant: ChatMessage }
+    | { type: 'reopen'; messageId: string }
     | { type: 'reset' }
 
 const empty: ChatState = { threadId: null, messages: [], streaming: false, tool: null }
@@ -67,6 +70,31 @@ function reducer(state: ChatState, action: Action): ChatState {
             const index = state.messages.findIndex((m) => m.id === action.assistantId)
             return index < 1 ? state : { ...state, messages: state.messages.filter((_, i) => i !== index && i !== index - 1) }
         }
+        case 'confirm':
+            return { ...state, messages: updateLast(state.messages, (m) => ({ ...m, confirmation: action.confirmation })) }
+        case 'answer':
+            // The card shows the choice at once; the result streams into a new assistant message.
+            return {
+                ...state,
+                streaming: true,
+                tool: null,
+                messages: [
+                    ...state.messages.map((m) =>
+                        m.id === action.messageId && m.confirmation
+                            ? { ...m, confirmation: { ...m.confirmation, state: action.approved ? ('confirmed' as const) : ('declined' as const) } }
+                            : m
+                    ),
+                    action.assistant
+                ]
+            }
+        case 'reopen':
+            // The answer never reached the server (network, sign-in): the customer can answer again.
+            return {
+                ...state,
+                messages: state.messages.map((m) =>
+                    m.id === action.messageId && m.confirmation ? { ...m, confirmation: { ...m.confirmation, state: 'pending' as const } } : m
+                )
+            }
         case 'reset':
             return { ...empty }
     }
@@ -129,44 +157,82 @@ export function useAgentChat() {
 
     useEffect(() => () => abortRef.current?.abort(), [])
 
-    const send = useCallback(
-        async (text: string) => {
-            const message = text.trim()
-            if (!message || state.streaming) return
+    // One stream loop for new messages and confirmation answers. Returns the failure kind, if any.
+    const runStream = useCallback(
+        async (request: Pick<StreamChatOptions, 'message' | 'resume'>, threadId: string | null) => {
             const abort = new AbortController()
             abortRef.current = abort
-            dispatch({
-                type: 'send',
-                user: { id: newId(), role: 'user', text: message, status: 'done' },
-                assistant: { id: newId(), role: 'assistant', text: '', status: 'streaming' }
-            })
             try {
                 for await (const event of streamChat({
-                    message,
-                    threadId: state.threadId,
+                    ...request,
+                    threadId,
                     signal: abort.signal,
                     onTokensRefreshed: (tokens) => dispatchApp(setTokens(tokens))
                 })) {
                     if (event.event === 'token') dispatch({ type: 'token', text: event.data.text })
                     else if (event.event === 'tool_start') dispatch({ type: 'tool', tool: event.data })
                     else if (event.event === 'tool_end') dispatch({ type: 'tool', tool: null })
+                    else if (event.event === 'confirm_required') dispatch({ type: 'confirm', confirmation: { ...event.data, state: 'pending' } })
                     else if (event.event === 'error') dispatch({ type: 'fail', error: event.data })
                     else if (event.event === 'done') dispatch({ type: 'done', threadId: event.data.threadId })
                 }
+                return null
             } catch (error) {
-                if (error instanceof ChatFailure && error.kind === 'aborted') return dispatch({ type: 'stopped' })
-                if (error instanceof ChatFailure) {
-                    return dispatch({
-                        type: 'fail',
-                        error: { message: error.message, retryable: error.kind === 'network', ...(error.kind === 'signin' ? { signIn: true } : {}) }
-                    })
+                if (error instanceof ChatFailure && error.kind === 'aborted') {
+                    dispatch({ type: 'stopped' })
+                    return 'aborted'
                 }
-                dispatch({ type: 'fail', error: { message: FAILURE_MESSAGES.network, retryable: true } })
+                // "Try again" resends a question; a failed confirmation is answered again on its card instead.
+                const canRetry = !request.resume
+                if (error instanceof ChatFailure) {
+                    dispatch({
+                        type: 'fail',
+                        error: {
+                            message: error.message,
+                            retryable: canRetry && error.kind === 'network',
+                            ...(error.kind === 'signin' ? { signIn: true } : {})
+                        }
+                    })
+                    return error.kind
+                }
+                dispatch({ type: 'fail', error: { message: FAILURE_MESSAGES.network, retryable: canRetry } })
+                return 'network'
             } finally {
                 if (abortRef.current === abort) abortRef.current = null
             }
         },
-        [state.streaming, state.threadId, dispatchApp]
+        [dispatchApp]
+    )
+
+    const pendingConfirmation = state.messages.find((m) => m.confirmation?.state === 'pending') ?? null
+
+    const send = useCallback(
+        async (text: string) => {
+            const message = text.trim()
+            // A message while a confirmation waits is refused by the server too (spec 009).
+            if (!message || state.streaming || pendingConfirmation) return
+            dispatch({
+                type: 'send',
+                user: { id: newId(), role: 'user', text: message, status: 'done' },
+                assistant: { id: newId(), role: 'assistant', text: '', status: 'streaming' }
+            })
+            await runStream({ message }, state.threadId)
+        },
+        [state.streaming, state.threadId, pendingConfirmation, runStream]
+    )
+
+    /** Confirm or cancel the pending action shown on `messageId` (spec 009). */
+    const respond = useCallback(
+        async (messageId: string, approved: boolean) => {
+            const target = state.messages.find((m) => m.id === messageId)
+            const confirmation = target?.confirmation
+            if (!confirmation || confirmation.state !== 'pending' || state.streaming) return
+            dispatch({ type: 'answer', messageId, approved, assistant: { id: newId(), role: 'assistant', text: '', status: 'streaming' } })
+            const failure = await runStream({ resume: { interruptId: confirmation.interruptId, approved } }, state.threadId)
+            // Never reached the server: let the customer answer again (the server would refuse a duplicate).
+            if (failure && failure !== 'invalid') dispatch({ type: 'reopen', messageId })
+        },
+        [state.messages, state.streaming, state.threadId, runStream]
     )
 
     const stop = useCallback(() => abortRef.current?.abort(), [])
@@ -187,5 +253,16 @@ export function useAgentChat() {
         dispatch({ type: 'reset' })
     }, [])
 
-    return { messages: state.messages, streaming: state.streaming, tool: state.tool, threadId: state.threadId, send, stop, retry, newChat }
+    return {
+        messages: state.messages,
+        streaming: state.streaming,
+        tool: state.tool,
+        threadId: state.threadId,
+        pendingConfirmation,
+        send,
+        respond,
+        stop,
+        retry,
+        newChat
+    }
 }

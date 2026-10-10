@@ -85,3 +85,13 @@ describe('streamChat', () => {
         expect((await failureOf(streamChat({ message: 'hi' }))).kind).toBe('network')
     })
 })
+
+describe('streamChat resume (spec 009)', () => {
+    it('posts the confirmation answer with the threadId', async () => {
+        localStorage.setItem('accessToken', 'access')
+        const fake = fakeFetch(() => streamingResponse([sse('done', { threadId: 't1' })]))
+        vi.stubGlobal('fetch', fake.fn)
+        await collect(streamChat({ resume: { interruptId: 'int-1', approved: false }, threadId: 't1' }))
+        expect(fake.requests[0]!.body).toEqual({ threadId: 't1', resume: { interruptId: 'int-1', approved: false } })
+    })
+})

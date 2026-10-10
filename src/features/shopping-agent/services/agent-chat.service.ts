@@ -26,7 +26,9 @@ export const FAILURE_MESSAGES = {
 } as const
 
 export interface StreamChatOptions {
-    message: string
+    /** A new message; or `resume` to answer a pending confirmation (spec 009). */
+    message?: string
+    resume?: { interruptId: string; approved: boolean }
     threadId?: string | null
     signal?: AbortSignal
     /** Called with a new token pair after a successful refresh, to keep the app's auth state in step. */
@@ -68,7 +70,7 @@ async function readMessage(response: Response): Promise<string | undefined> {
     }
 }
 
-export async function* streamChat({ message, threadId, signal, onTokensRefreshed }: StreamChatOptions): AsyncGenerator<AgentEvent> {
+export async function* streamChat({ message, resume, threadId, signal, onTokensRefreshed }: StreamChatOptions): AsyncGenerator<AgentEvent> {
     const send = (token: string | null) =>
         fetch(CHAT_URL, {
             method: 'POST',
@@ -77,7 +79,7 @@ export async function* streamChat({ message, threadId, signal, onTokensRefreshed
                 Accept: 'text/event-stream',
                 ...(token ? { Authorization: `Bearer ${token}` } : {})
             },
-            body: JSON.stringify(threadId ? { message, threadId } : { message }),
+            body: JSON.stringify(resume ? { threadId, resume } : threadId ? { message, threadId } : { message }),
             ...(signal ? { signal } : {})
         })
 

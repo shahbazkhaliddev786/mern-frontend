@@ -6,7 +6,7 @@ import Composer from './Composer'
 import MessageList from './MessageList'
 
 export default function ChatPanel({ onNavigate }: { onNavigate?: () => void }) {
-    const { messages, streaming, tool, send, stop, retry, newChat } = useAgentChat()
+    const { messages, streaming, tool, pendingConfirmation, send, respond, stop, retry, newChat } = useAgentChat()
     return (
         <div className="flex h-full min-h-0 flex-col">
             <SheetHeader className="border-b pr-12">
@@ -19,8 +19,20 @@ export default function ChatPanel({ onNavigate }: { onNavigate?: () => void }) {
                 </div>
                 <SheetDescription>Answers come from the store's catalog and your account.</SheetDescription>
             </SheetHeader>
-            <MessageList messages={messages} tool={tool} onRetry={retry} {...(onNavigate ? { onNavigate } : {})} />
-            <Composer streaming={streaming} onSend={(text) => void send(text)} onStop={stop} />
+            <MessageList
+                messages={messages}
+                tool={tool}
+                busy={streaming}
+                onRetry={retry}
+                onConfirm={(id, approved) => void respond(id, approved)}
+                {...(onNavigate ? { onNavigate } : {})}
+            />
+            <Composer
+                streaming={streaming}
+                blockedReason={pendingConfirmation ? 'Confirm or cancel the action above first.' : null}
+                onSend={(text) => void send(text)}
+                onStop={stop}
+            />
         </div>
     )
 }

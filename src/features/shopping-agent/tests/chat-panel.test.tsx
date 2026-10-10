@@ -248,3 +248,135 @@ describe('the visible conversation across reloads', () => {
         expect(screen.queryByText('Saved answer')).toBeNull()
     })
 })
+
+describe('confirmation card (spec 009)', () => {
+    const pause = (interruptId = 'int-1') =>
+        streamingResponse([
+            sse('confirm_required', { interruptId, tool: 'clear_cart', summary: 'Remove all 2 items ($90.00) from your cart?' }),
+            sse('done', { threadId: 'thread-c' })
+        ])
+
+    it('shows the summary with Confirm and Cancel, and no tool chip', async () => {
+        vi.stubGlobal('fetch', fakeFetch(() => pause()).fn)
+        renderLauncher(alice)
+        await openAndSend('empty my cart')
+        const card = await screen.findByRole('group', { name: 'Confirm this action' })
+        expect(card).toHaveTextContent('Remove all 2 items ($90.00) from your cart?')
+        expect(within(card).getByRole('button', { name: 'Confirm' })).toBeEnabled()
+        expect(within(card).getByRole('button', { name: 'Cancel' })).toBeEnabled()
+        expect(screen.queryByRole('status')).toBeNull()
+    })
+
+    it('Confirm sends the resume, shows Confirmed, and streams the result', async () => {
+        const fake = fakeFetch(
+            () => pause(),
+            () =>
+                streamingResponse([
+                    sse('tool_start', { tool: 'clear_cart', label: 'Clearing your cart…' }),
+                    sse('tool_end', { tool: 'clear_cart', ok: true }),
+                    sse('token', { text: 'Your cart is empty now.' }),
+                    sse('done', { threadId: 'thread-c' })
+                ])
+        )
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = await openAndSend('empty my cart')
+        const card = await screen.findByRole('group', { name: 'Confirm this action' })
+        await user.click(within(card).getByRole('button', { name: 'Confirm' }))
+
+        expect(await screen.findByText('Your cart is empty now.')).toBeInTheDocument()
+        expect(card).toHaveTextContent('Confirmed')
+        expect(within(card).queryByRole('button')).toBeNull()
+        expect(fake.requests[1]!.body).toEqual({ threadId: 'thread-c', resume: { interruptId: 'int-1', approved: true } })
+    })
+
+    it('Cancel sends approved: false and shows Cancelled', async () => {
+        const fake = fakeFetch(
+            () => pause(),
+            () => streamingResponse([sse('token', { text: 'Okay, I left your cart as it is.' }), sse('done', { threadId: 'thread-c' })])
+        )
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = await openAndSend('empty my cart')
+        const card = await screen.findByRole('group', { name: 'Confirm this action' })
+        await user.click(within(card).getByRole('button', { name: 'Cancel' }))
+        expect(await screen.findByText('Okay, I left your cart as it is.')).toBeInTheDocument()
+        expect(card).toHaveTextContent('Cancelled')
+        expect(fake.requests[1]!.body).toEqual({ threadId: 'thread-c', resume: { interruptId: 'int-1', approved: false } })
+    })
+
+    it('blocks new messages while a confirmation waits, and unblocks after a choice', async () => {
+        vi.stubGlobal(
+            'fetch',
+            fakeFetch(
+                () => pause(),
+                () => streamingResponse([sse('token', { text: 'Done.' }), sse('done', { threadId: 'thread-c' })])
+            ).fn
+        )
+        renderLauncher(alice)
+        const user = await openAndSend('empty my cart')
+        const card = await screen.findByRole('group', { name: 'Confirm this action' })
+        const box = screen.getByRole('textbox', { name: 'Message the shopping assistant' })
+        expect(box).toBeDisabled()
+        expect(screen.getByText('Confirm or cancel the action above first.')).toBeInTheDocument()
+        await user.click(within(card).getByRole('button', { name: 'Confirm' }))
+        await screen.findByText('Done.')
+        expect(box).toBeEnabled()
+    })
+
+    it('shows "already confirmed" without Try again', async () => {
+        vi.stubGlobal(
+            'fetch',
+            fakeFetch(
+                () => pause(),
+                () =>
+                    streamingResponse([
+                        sse('error', { message: 'That was already confirmed.', retryable: false }),
+                        sse('done', { threadId: 'thread-c' })
+                    ])
+            ).fn
+        )
+        renderLauncher(alice)
+        const user = await openAndSend('empty my cart')
+        await user.click(within(await screen.findByRole('group', { name: 'Confirm this action' })).getByRole('button', { name: 'Confirm' }))
+        expect(await screen.findByText('That was already confirmed.')).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
+    })
+
+    it('reopens the card when the answer never reached the server', async () => {
+        vi.stubGlobal(
+            'fetch',
+            fakeFetch(
+                () => pause(),
+                () => Promise.reject(new TypeError('Failed to fetch'))
+            ).fn
+        )
+        renderLauncher(alice)
+        const user = await openAndSend('empty my cart')
+        const card = await screen.findByRole('group', { name: 'Confirm this action' })
+        await user.click(within(card).getByRole('button', { name: 'Confirm' }))
+        expect(await screen.findByText('The connection dropped. Try again.')).toBeInTheDocument()
+        expect(within(card).getByRole('button', { name: 'Confirm' })).toBeEnabled()
+        expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
+    })
+
+    it('keeps a pending card across a reload, and it can still be answered', async () => {
+        const fake = fakeFetch(
+            () => pause('int-9'),
+            () => streamingResponse([sse('token', { text: 'Cleared.' }), sse('done', { threadId: 'thread-c' })])
+        )
+        vi.stubGlobal('fetch', fake.fn)
+        const first = renderLauncher(alice)
+        await openAndSend('empty my cart')
+        await screen.findByRole('group', { name: 'Confirm this action' })
+        first.unmount()
+
+        renderLauncher(alice)
+        const user = userEvent.setup()
+        await user.click(screen.getByRole('button', { name: 'Open the shopping assistant' }))
+        const card = await screen.findByRole('group', { name: 'Confirm this action' })
+        await user.click(within(card).getByRole('button', { name: 'Confirm' }))
+        expect(await screen.findByText('Cleared.')).toBeInTheDocument()
+        expect(fake.requests[1]!.body).toEqual({ threadId: 'thread-c', resume: { interruptId: 'int-9', approved: true } })
+    })
+})
