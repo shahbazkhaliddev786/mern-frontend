@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
-import { setTokens } from '@/features/authentication/slices/auth-slice'
+import { useQueryClient } from '@tanstack/react-query'
+import { setTokens, updateUser } from '@/features/authentication/slices/auth-slice'
+import { profileService } from '@/features/users/services/profile.service'
 import { useAppDispatch, useAppSelector } from '@/shared/store/hooks'
 import { ChatFailure, FAILURE_MESSAGES, streamChat, type StreamChatOptions } from '../services/agent-chat.service'
 import type { ChatMessage, Confirmation } from '../types'
@@ -132,6 +134,7 @@ export function useAgentChat() {
     const { user, accessToken } = useAppSelector((s) => s.auth)
     const userKey = user?.id ?? decodeUserId(accessToken)
 
+    const queryClient = useQueryClient()
     const [state, dispatch] = useReducer(reducer, userKey, (key) => ({ ...empty, ...loadSaved(key) }))
     const abortRef = useRef<AbortController | null>(null)
 
@@ -157,6 +160,18 @@ export function useAgentChat() {
 
     useEffect(() => () => abortRef.current?.abort(), [])
 
+    // After the agent changes the name (spec 011), keep the header and Edit Profile in step,
+    // as the Edit Profile form does after saving.
+    const refreshProfileName = useCallback(async () => {
+        try {
+            const profile = await profileService.getUserProfile()
+            dispatchApp(updateUser({ name: profile.data.name }))
+            void queryClient.invalidateQueries({ queryKey: ['profile'] })
+        } catch {
+            // Not critical: the header catches up on the next profile load.
+        }
+    }, [dispatchApp, queryClient])
+
     // One stream loop for new messages and confirmation answers. Returns the failure kind, if any.
     const runStream = useCallback(
         async (request: Pick<StreamChatOptions, 'message' | 'resume'>, threadId: string | null) => {
@@ -171,8 +186,10 @@ export function useAgentChat() {
                 })) {
                     if (event.event === 'token') dispatch({ type: 'token', text: event.data.text })
                     else if (event.event === 'tool_start') dispatch({ type: 'tool', tool: event.data })
-                    else if (event.event === 'tool_end') dispatch({ type: 'tool', tool: null })
-                    else if (event.event === 'confirm_required') dispatch({ type: 'confirm', confirmation: { ...event.data, state: 'pending' } })
+                    else if (event.event === 'tool_end') {
+                        dispatch({ type: 'tool', tool: null })
+                        if (event.data.tool === 'update_profile' && event.data.ok) void refreshProfileName()
+                    } else if (event.event === 'confirm_required') dispatch({ type: 'confirm', confirmation: { ...event.data, state: 'pending' } })
                     else if (event.event === 'error') dispatch({ type: 'fail', error: event.data })
                     else if (event.event === 'done') dispatch({ type: 'done', threadId: event.data.threadId })
                 }
@@ -201,7 +218,7 @@ export function useAgentChat() {
                 if (abortRef.current === abort) abortRef.current = null
             }
         },
-        [dispatchApp]
+        [dispatchApp, refreshProfileName]
     )
 
     const pendingConfirmation = state.messages.find((m) => m.confirmation?.state === 'pending') ?? null

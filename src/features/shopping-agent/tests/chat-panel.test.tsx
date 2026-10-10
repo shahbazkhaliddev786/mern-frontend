@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import authReducer from '@/features/authentication/slices/auth-slice'
 import ChatLauncher from '../components/ChatLauncher'
 import { fakeFetch, jsonResponse, sse, streamingResponse } from './fake-stream'
@@ -24,13 +25,16 @@ function renderLauncher(user: AuthUser | null) {
             }
         }
     })
-    return render(
+    const view = render(
         <Provider store={store}>
-            <MemoryRouter>
-                <ChatLauncher />
-            </MemoryRouter>
+            <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+                <MemoryRouter>
+                    <ChatLauncher />
+                </MemoryRouter>
+            </QueryClientProvider>
         </Provider>
     )
+    return Object.assign(view, { store })
 }
 
 const alice: AuthUser = { id: 'alice-id', name: 'Alice', email: 'alice@example.com' }
@@ -390,5 +394,25 @@ describe('confirmation card (spec 009)', () => {
         await user.click(within(card).getByRole('button', { name: 'Confirm' }))
         expect(await screen.findByText('Cleared.')).toBeInTheDocument()
         expect(fake.requests[1]!.body).toEqual({ threadId: 'thread-c', resume: { interruptId: 'int-9', approved: true } })
+    })
+})
+
+describe('after the agent changes the name (spec 011)', () => {
+    it("updates the signed-in user's name from the profile", async () => {
+        const fake = fakeFetch(
+            () =>
+                streamingResponse([
+                    sse('tool_end', { tool: 'update_profile', ok: true }),
+                    sse('token', { text: 'Done, you are Jane Doe now.' }),
+                    sse('done', { threadId: 't' })
+                ]),
+            () => jsonResponse(200, { status: 'success', message: 'ok', data: { id: 'alice-id', name: 'Jane Doe', email: 'alice@example.com' } })
+        )
+        vi.stubGlobal('fetch', fake.fn)
+        const { store } = renderLauncher(alice)
+        await openAndSend('call me Jane Doe')
+        await screen.findByText('Done, you are Jane Doe now.')
+        await waitFor(() => expect(store.getState().auth.user?.name).toBe('Jane Doe'))
+        expect(fake.requests[1]!.url).toBe('/api/v1/auth/profile')
     })
 })
