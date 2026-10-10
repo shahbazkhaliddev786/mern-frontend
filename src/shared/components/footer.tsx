@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { Facebook, Instagram, Linkedin, Twitter, MapPin, Phone } from 'lucide-react'
+import { Facebook, Instagram, Linkedin, Twitter, Mail, MapPin, Phone } from 'lucide-react'
+import { STORE_CONTACT } from '@/shared/config/store'
 
 const columns = [
     {
@@ -15,9 +16,7 @@ const columns = [
         heading: 'Help',
         links: [
             { label: 'Contact Us', to: '/contact' },
-            { label: 'Shipping & Returns', to: '/about' },
-            { label: 'FAQ', to: '/about' },
-            { label: 'Size Guide', to: '/about' }
+            { label: 'Our Story', to: '/about' }
         ]
     },
     {
@@ -60,12 +59,15 @@ export default function Footer() {
                             ))}
                         </div>
                         <div className="mt-6 space-y-2 text-sm text-muted-foreground">
-                            <p className="font-semibold text-foreground">Address</p>
+                            <p className="font-semibold text-foreground">Contact</p>
                             <p className="flex items-center gap-2">
-                                <Phone className="h-4 w-4 shrink-0" /> +1 123 654 987
+                                <Mail className="h-4 w-4 shrink-0" /> {STORE_CONTACT.email}
                             </p>
                             <p className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4 shrink-0" /> 877 The Bronx, NY 14568, USA
+                                <Phone className="h-4 w-4 shrink-0" /> {STORE_CONTACT.phone}
+                            </p>
+                            <p className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 shrink-0" /> {STORE_CONTACT.address}
                             </p>
                         </div>
                     </div>

@@ -1,10 +1,11 @@
 import { CreditCard, RotateCcw, Headphones } from 'lucide-react'
+import { STORE_CONTACT } from '@/shared/config/store'
 
 const benefits = [
     {
         icon: CreditCard,
         title: 'Payment Method',
-        description: 'We offer flexible payment options, to make it easier.',
+        description: 'Pay securely by card through Stripe.',
         tint: 'bg-tile-lavender'
     },
     {
@@ -16,7 +17,7 @@ const benefits = [
     {
         icon: Headphones,
         title: 'Customer Support',
-        description: 'Our customer support is available 24/7.',
+        description: `Reach us ${STORE_CONTACT.hours}. We typically reply within ${STORE_CONTACT.replyTime}.`,
         tint: 'bg-tile-mint'
     }
 ]

@@ -149,9 +149,14 @@ export function CheckoutPage() {
                             <span className="text-muted-foreground">Subtotal</span>
                             <span>${subtotal.toFixed(2)}</span>
                         </div>
+                        {/* Mirrors the server's pricing rule (mern-backend/src/services/pricing.service.ts) */}
                         <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Shipping</span>
-                            <span>Calculated at next step</span>
+                            <span>Free</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Tax</span>
+                            <span>$0.00</span>
                         </div>
                         <div className="flex justify-between text-lg font-semibold pt-2">
                             <span>Total</span>

@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, it, expect } from 'vitest'
 
 import Footer from '../components/footer'
+import { STORE_CONTACT } from '../config/store'
 
 describe('Footer Component', () => {
     const renderFooter = () =>
@@ -12,10 +13,12 @@ describe('Footer Component', () => {
             </MemoryRouter>
         )
 
-    it('renders the brand name and address correctly', () => {
+    it('renders the brand name and the same contact details as the contact page', () => {
         renderFooter()
         expect(screen.getByText('Aljo Store')).toBeInTheDocument()
-        expect(screen.getByText(/877 The Bronx, NY/i)).toBeInTheDocument()
+        expect(screen.getByText(STORE_CONTACT.email)).toBeInTheDocument()
+        expect(screen.getByText(STORE_CONTACT.phone)).toBeInTheDocument()
+        expect(screen.getByText(STORE_CONTACT.address)).toBeInTheDocument()
     })
 
     it('renders all section headings', () => {
@@ -30,11 +33,11 @@ describe('Footer Component', () => {
 
         const allLinks = screen.getAllByRole('link')
 
-        // 1 brand + 4 social + 12 nav = 17
-        expect(allLinks).toHaveLength(17)
+        // 1 brand + 4 social + 10 nav = 15
+        expect(allLinks).toHaveLength(15)
 
         expect(screen.getAllByRole('link', { name: /Sign In|Register|My Orders|Profile/i })).toHaveLength(4)
-        expect(screen.getAllByRole('link', { name: /Contact Us|Shipping & Returns|FAQ|Size Guide/i })).toHaveLength(4)
+        expect(screen.getAllByRole('link', { name: /Contact Us|Our Story/i })).toHaveLength(2)
         expect(screen.getAllByRole('link', { name: /All Products|New Arrivals|Best Sellers|Your Cart/i })).toHaveLength(4)
     })
 

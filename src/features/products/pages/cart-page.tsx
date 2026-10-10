@@ -125,7 +125,7 @@ export default function CartPage() {
                                 <p className="font-medium text-foreground">Subtotal includes:</p>
                                 <ul className="mt-3 space-y-2">
                                     <li>Prices and quantities from your cart</li>
-                                    <li>Taxes and shipping calculated at checkout</li>
+                                    <li>Free shipping, no tax added</li>
                                 </ul>
                             </div>
 

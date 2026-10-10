@@ -1,11 +1,12 @@
 import { Clock, Mail, MapPin, Phone } from 'lucide-react'
 import { ContactForm } from './contact'
+import { STORE_CONTACT } from '@/shared/config/store'
 
 const contactDetails = [
-    { icon: Mail, label: 'Email', value: 'hello@aljostore.com', tint: 'bg-tile-lavender' },
-    { icon: Phone, label: 'Phone', value: '+1 (555) 234-5678', tint: 'bg-tile-mint' },
-    { icon: MapPin, label: 'Studio', value: '123 Fifth Avenue, New York, NY', tint: 'bg-tile-blue' },
-    { icon: Clock, label: 'Hours', value: 'Mon – Fri, 9am – 6pm EST', tint: 'bg-tile-peach' }
+    { icon: Mail, label: 'Email', value: STORE_CONTACT.email, tint: 'bg-tile-lavender' },
+    { icon: Phone, label: 'Phone', value: STORE_CONTACT.phone, tint: 'bg-tile-mint' },
+    { icon: MapPin, label: 'Studio', value: STORE_CONTACT.address, tint: 'bg-tile-blue' },
+    { icon: Clock, label: 'Hours', value: STORE_CONTACT.hours, tint: 'bg-tile-peach' }
 ]
 
 export default function ContactFormWrapper() {
@@ -17,7 +18,7 @@ export default function ContactFormWrapper() {
                 </span>
                 <h1 className="font-display text-4xl md:text-5xl font-semibold text-primary mb-4">We'd Love to Hear From You</h1>
                 <p className="text-muted-foreground text-lg max-w-xl mx-auto leading-relaxed">
-                    Questions, feedback, or just want to say hello? Our team typically responds within one business day.
+                    Questions, feedback, or just want to say hello? Our team typically responds within {STORE_CONTACT.replyTime}.
                 </p>
             </div>
 
