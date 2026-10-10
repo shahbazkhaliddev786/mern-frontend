@@ -1,6 +1,35 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { configureStore } from '@reduxjs/toolkit'
 
-import reducer, { setTokens, updateUser } from '../slices/auth-slice'
+import reducer, { loginUser, setTokens, updateUser } from '../slices/auth-slice'
+import { authService } from '../services/auth.service'
+import { ApiError } from '@/shared/services/api'
+
+describe('loginUser', () => {
+    const makeStore = () => configureStore({ reducer: { auth: reducer } })
+
+    it('flags an unverified account so the page can open the code step, without an error banner', async () => {
+        const message = 'Please verify your email first. We sent a new code to your email address.'
+        vi.spyOn(authService, 'login').mockRejectedValueOnce(
+            new ApiError(403, message, { status: 'error', message, data: { needsVerification: true } })
+        )
+        const store = makeStore()
+
+        const result = await store.dispatch(loginUser({ email: 'jane@example.com', password: 'Old-pass1!' }))
+
+        expect(result.payload).toEqual({ message, needsVerification: true })
+        expect(store.getState().auth.error).toBeNull()
+    })
+
+    it('reports other failures as an error message', async () => {
+        vi.spyOn(authService, 'login').mockRejectedValueOnce(new ApiError(500, 'Invalid credentials', { message: 'Invalid credentials' }))
+        const store = makeStore()
+
+        await store.dispatch(loginUser({ email: 'jane@example.com', password: 'wrong' }))
+
+        expect(store.getState().auth.error).toBe('Invalid credentials')
+    })
+})
 
 const signedIn = {
     user: { id: 'user-1', name: 'Jane', email: 'jane@example.com', profile: 'https://example.com/jane.png' },

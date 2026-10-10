@@ -9,7 +9,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { loginSchema, type LoginFormData } from '../schemas/auth.schema'
 import { useAppDispatch, useAppSelector } from '@/shared/store/hooks'
-import { loginUser } from '../slices/auth-slice'
+import { loginUser, type LoginError } from '../slices/auth-slice'
 import { toast } from 'react-toastify'
 
 export default function Login() {
@@ -35,7 +35,14 @@ export default function Login() {
             const isAdmin = response.user.role === 'admin'
             navigate(isAdmin ? '/admin' : '/products')
         } catch (error) {
-            toast.error(typeof error === 'string' ? error : 'Login failed')
+            const { message, needsVerification } = error as LoginError
+            if (needsVerification) {
+                // The server has emailed a fresh code; finish verification on the code page
+                toast.info(message)
+                navigate('/verify-email', { state: { email: data.email } })
+                return
+            }
+            toast.error(message || 'Login failed')
         }
     }
 

@@ -27,13 +27,21 @@ export default function VerifyEmail() {
         // Only allow numbers
         if (!/^[0-9]*$/.test(value)) return
 
+        // Typing over a filled box gives two characters: keep the new one. Anything else longer
+        // than one digit is a pasted or autofilled code, which fills the boxes from here on.
+        const digits = otp[index] && value.length === 2 ? value.slice(-1) : value.slice(0, 6 - index)
+
         const newOtp = [...otp]
-        newOtp[index] = value.substring(value.length - 1)
+        if (!digits) newOtp[index] = ''
+        digits.split('').forEach((digit, i) => {
+            newOtp[index + i] = digit
+        })
         setOtp(newOtp)
 
-        // Move focus up
-        if (value && index < 5 && inputRefs.current[index + 1]) {
-            inputRefs.current[index + 1]?.focus()
+        // Move focus to the box after the last digit entered
+        const next = index + digits.length
+        if (digits && next <= 5) {
+            inputRefs.current[next]?.focus()
         }
     }
 

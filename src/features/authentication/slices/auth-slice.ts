@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
 import { authService, type SignupPayload, type VerifyOtpPayload } from '../services/auth.service'
-import type { AuthTokens, AuthUser, LoginDto } from '../types'
+import type { AuthResponse, AuthTokens, AuthUser, LoginDto } from '../types'
+import { ApiError } from '@/shared/services/api'
 
 export const signupUser = createAsyncThunk('auth/signup', async (data: SignupPayload, { rejectWithValue }) => {
     try {
@@ -40,16 +41,26 @@ export const resendOtp = createAsyncThunk('auth/resendOtp', async (email: string
     }
 })
 
-export const loginUser = createAsyncThunk('auth/login', async (data: LoginDto, { rejectWithValue }) => {
+export interface LoginError {
+    message: string
+    // The password was right but the email isn't verified yet; the server has emailed a fresh code
+    needsVerification?: boolean
+}
+
+export const loginUser = createAsyncThunk<AuthResponse, LoginDto, { rejectValue: LoginError }>('auth/login', async (data, { rejectWithValue }) => {
     try {
         const response = await authService.login(data)
         return response.data
     } catch (error) {
+        const body = error instanceof ApiError ? (error.data as { data?: { needsVerification?: boolean } } | undefined) : undefined
         const message = error instanceof Error ? error.message : 'Failed to log in'
-        if (message === 'Internal Server Error') {
-            return rejectWithValue('Login failed: Please verify your email first or check your credentials.')
+        if (body?.data?.needsVerification) {
+            return rejectWithValue({ message, needsVerification: true })
         }
-        return rejectWithValue(message)
+        if (message === 'Internal Server Error') {
+            return rejectWithValue({ message: 'Login failed: please check your email and password.' })
+        }
+        return rejectWithValue({ message })
     }
 })
 
@@ -144,7 +155,8 @@ export const authSlice = createSlice({
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.isLoading = false
-                state.error = action.payload as string
+                // An unverified account goes to the code step rather than showing an error here
+                state.error = action.payload?.needsVerification ? null : (action.payload?.message ?? 'Failed to log in')
             })
             // Verify OTP Cases (auto-login on success)
             .addCase(verifyOtp.pending, (state) => {
