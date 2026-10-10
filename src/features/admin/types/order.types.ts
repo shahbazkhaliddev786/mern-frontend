@@ -43,7 +43,9 @@ export function getOrderItemProductId(product: AdminOrderItem['product']): strin
 export interface AdminOrderShippingAddress {
     fullName: string
     address: string
+    apartment?: string
     city: string
+    state?: string
     postalCode?: string
     country?: string
     phone?: string

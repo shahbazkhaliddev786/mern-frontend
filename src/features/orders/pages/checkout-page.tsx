@@ -91,6 +91,11 @@ export function CheckoutPage() {
                             {errors.address && <p className="text-sm text-destructive">{errors.address.message}</p>}
                         </div>
 
+                        <div className="space-y-2">
+                            <Label htmlFor="apartment">Apartment, Suite, etc. (Optional)</Label>
+                            <Input id="apartment" placeholder="Apt 4B" {...register('apartment')} />
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="city">City</Label>
@@ -98,23 +103,28 @@ export function CheckoutPage() {
                                 {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="postalCode">Postal Code</Label>
-                                <Input id="postalCode" placeholder="10001" {...register('postalCode')} />
-                                {errors.postalCode && <p className="text-sm text-destructive">{errors.postalCode.message}</p>}
+                                <Label htmlFor="state">State / Province (Optional)</Label>
+                                <Input id="state" placeholder="NY" {...register('state')} />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
+                                <Label htmlFor="postalCode">Postal Code</Label>
+                                <Input id="postalCode" placeholder="10001" {...register('postalCode')} />
+                                {errors.postalCode && <p className="text-sm text-destructive">{errors.postalCode.message}</p>}
+                            </div>
+                            <div className="space-y-2">
                                 <Label htmlFor="country">Country</Label>
                                 <Input id="country" placeholder="United States" {...register('country')} />
                                 {errors.country && <p className="text-sm text-destructive">{errors.country.message}</p>}
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">Phone (Optional)</Label>
-                                <Input id="phone" placeholder="+1 234 567 8900" {...register('phone')} />
-                                {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
-                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="phone">Phone (Optional)</Label>
+                            <Input id="phone" placeholder="+1 234 567 8900" {...register('phone')} />
+                            {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
                         </div>
                     </form>
                 </div>

@@ -39,7 +39,9 @@ const STATUS_BADGE_CLASSES: Record<OrderStatus, string> = {
 const EMPTY_ADDRESS: AdminOrderShippingAddress = {
     fullName: '',
     address: '',
+    apartment: '',
     city: '',
+    state: '',
     postalCode: '',
     country: '',
     phone: ''
@@ -96,7 +98,9 @@ export function OrderDetailModal({ isOpen, onClose, orderId, onDeleted }: OrderD
         setEditAddress({
             fullName: order.shippingAddress?.fullName ?? '',
             address: order.shippingAddress?.address ?? '',
+            apartment: order.shippingAddress?.apartment ?? '',
             city: order.shippingAddress?.city ?? '',
+            state: order.shippingAddress?.state ?? '',
             postalCode: order.shippingAddress?.postalCode ?? '',
             country: order.shippingAddress?.country ?? '',
             phone: order.shippingAddress?.phone ?? ''
@@ -229,11 +233,27 @@ export function OrderDetailModal({ isOpen, onClose, orderId, onDeleted }: OrderD
                                             className={inputClassName}
                                         />
                                     </div>
+                                    <div className="space-y-1 sm:col-span-2">
+                                        <Label className="text-xs">Apartment, suite, etc.</Label>
+                                        <Input
+                                            value={editAddress.apartment}
+                                            onChange={(e) => setEditAddress((a) => ({ ...a, apartment: e.target.value }))}
+                                            className={inputClassName}
+                                        />
+                                    </div>
                                     <div className="space-y-1">
                                         <Label className="text-xs">City</Label>
                                         <Input
                                             value={editAddress.city}
                                             onChange={(e) => setEditAddress((a) => ({ ...a, city: e.target.value }))}
+                                            className={inputClassName}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">State / province</Label>
+                                        <Input
+                                            value={editAddress.state}
+                                            onChange={(e) => setEditAddress((a) => ({ ...a, state: e.target.value }))}
                                             className={inputClassName}
                                         />
                                     </div>
@@ -266,7 +286,9 @@ export function OrderDetailModal({ isOpen, onClose, orderId, onDeleted }: OrderD
                                 <p className="mt-1 text-muted-foreground">
                                     {order.shippingAddress.fullName}
                                     <br />
-                                    {order.shippingAddress.address}, {order.shippingAddress.city}
+                                    {order.shippingAddress.address}
+                                    {order.shippingAddress.apartment ? `, ${order.shippingAddress.apartment}` : ''}, {order.shippingAddress.city}
+                                    {order.shippingAddress.state ? `, ${order.shippingAddress.state}` : ''}
                                     {order.shippingAddress.postalCode ? ` ${order.shippingAddress.postalCode}` : ''}
                                     <br />
                                     {order.shippingAddress.country}
