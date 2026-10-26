@@ -5,7 +5,8 @@ export type AgentEvent =
     | { event: 'tool_end'; data: { tool: string; ok: boolean } }
     | { event: 'confirm_required'; data: { interruptId: string; tool: string; summary: string } }
     | { event: 'error'; data: { message: string; retryable: boolean } }
-    | { event: 'done'; data: { threadId: string } }
+    // replyId (backend spec 021): the reply the customer can rate; absent after a failure or a pause.
+    | { event: 'done'; data: { threadId: string; replyId?: string } }
 
 export type MessageStatus = 'streaming' | 'done' | 'stopped' | 'error'
 
@@ -28,6 +29,22 @@ export interface ChatMessage {
     confirmation?: Confirmation
     /** An image the customer attached (spec 012). `previewUrl` is an object URL and isn't saved. */
     attachment?: { name: string; uploadId?: string; previewUrl?: string }
+    /** The server's id for this reply, which the customer can rate (backend spec 021). */
+    replyId?: string
+    feedback?: Feedback
+}
+
+export const FEEDBACK_REASONS = ['wrong_answer', 'wrong_action', 'didnt_understand', 'other'] as const
+export type FeedbackReason = (typeof FEEDBACK_REASONS)[number]
+
+/** The customer's thumbs up or down on a reply, and how sending it went (backend spec 021). */
+export interface Feedback {
+    rating: 'up' | 'down'
+    state: 'sending' | 'sent' | 'failed'
+    reason?: FeedbackReason
+    comment?: string
+    /** The thumbs-down's reason or comment was sent (or there was nothing to add). */
+    detailSent?: boolean
 }
 
 /** The image waiting in the composer (spec 012). */

@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Image as ImageIcon, RotateCcw } from 'lucide-react'
-import type { ChatMessage } from '../types'
+import type { ChatMessage, Feedback, FeedbackReason } from '../types'
 import AssistantMessage from './AssistantMessage'
 import ConfirmCard from './ConfirmCard'
+import FeedbackBar from './FeedbackBar'
 import ToolStatus from './ToolStatus'
 
 interface MessageListProps {
@@ -11,12 +12,14 @@ interface MessageListProps {
     tool: { label: string } | null
     onRetry: (assistantId: string) => void
     onConfirm: (assistantId: string, approved: boolean) => void
+    /** Thumbs up or down on a finished reply (backend spec 021). */
+    onFeedback?: (assistantId: string, rating: Feedback['rating'], detail?: { reason?: FeedbackReason; comment?: string }) => void
     /** True while a reply streams: confirmation buttons wait for it. */
     busy: boolean
     onNavigate?: () => void
 }
 
-export default function MessageList({ messages, tool, onRetry, onConfirm, busy, onNavigate }: MessageListProps) {
+export default function MessageList({ messages, tool, onRetry, onConfirm, onFeedback, busy, onNavigate }: MessageListProps) {
     const endRef = useRef<HTMLDivElement>(null)
     const last = messages.at(-1)
     useEffect(() => {
@@ -69,6 +72,12 @@ export default function MessageList({ messages, tool, onRetry, onConfirm, busy, 
                             />
                         )}
                         {message.status === 'stopped' && <p className="text-muted-foreground text-xs">Stopped.</p>}
+                        {onFeedback && message.replyId && message.status === 'done' && (
+                            <FeedbackBar
+                                {...(message.feedback ? { feedback: message.feedback } : {})}
+                                onRate={(rating, detail) => onFeedback(message.id, rating, detail)}
+                            />
+                        )}
                         {message.status === 'error' && message.error && (
                             <div className="text-destructive space-y-2 text-sm">
                                 <p>{message.error.message}</p>

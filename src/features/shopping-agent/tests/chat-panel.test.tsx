@@ -620,3 +620,103 @@ describe('card numbers and passwords stay in the browser (backend spec 016)', ()
         expect(screen.queryByRole('alert')).toBeNull()
     })
 })
+
+describe('rating a reply (backend spec 021)', () => {
+    const answered = (replyId?: string) => () =>
+        streamingResponse([
+            sse('token', { text: 'The Blue Glazed Mug is $24.' }),
+            sse('done', { threadId: 'thread-1', ...(replyId ? { replyId } : {}) })
+        ])
+    const ok = () => jsonResponse(200, { status: 'success', message: 'Thanks for the feedback' })
+
+    it('shows thumbs only on a finished reply the server named', async () => {
+        vi.stubGlobal(
+            'fetch',
+            fakeFetch(answered(), () =>
+                streamingResponse([
+                    sse('error', { message: 'Something went wrong. Please try again.', retryable: false }),
+                    sse('done', { threadId: 'thread-1' })
+                ])
+            ).fn
+        )
+        renderLauncher(alice)
+        const user = await openAndSend('mugs?')
+        await screen.findByText('The Blue Glazed Mug is $24.')
+        expect(within(lastAssistant()).queryByRole('button', { name: 'Helpful' })).toBeNull()
+        await user.type(screen.getByRole('textbox', { name: 'Message the shopping assistant' }), 'again{Enter}')
+        await screen.findByText('Something went wrong. Please try again.')
+        expect(screen.queryByTestId('feedback')).toBeNull()
+    })
+
+    it('a thumbs up sends the vote with the thread and reply ids', async () => {
+        const fake = fakeFetch(answered('reply-1'), ok)
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = await openAndSend('mugs?')
+        await user.click(await within(lastAssistant()).findByRole('button', { name: 'Helpful' }))
+        expect(await within(lastAssistant()).findByText('Thanks for the feedback.')).toBeInTheDocument()
+        expect(within(lastAssistant()).getByRole('button', { name: 'Helpful' })).toHaveAttribute('aria-pressed', 'true')
+        expect(fake.requests[1]).toMatchObject({
+            url: '/api/v1/agent/feedback',
+            body: { threadId: 'thread-1', replyId: 'reply-1', rating: 'up' },
+            authorization: 'Bearer access'
+        })
+        expect(screen.queryByRole('form', { name: 'What went wrong?' })).toBeNull()
+    })
+
+    it('a thumbs down counts at once, then sends an optional reason and comment', async () => {
+        const fake = fakeFetch(answered('reply-1'), ok, ok)
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = await openAndSend('mugs?')
+        await user.click(await within(lastAssistant()).findByRole('button', { name: 'Not helpful' }))
+        const form = await screen.findByRole('form', { name: 'What went wrong?' })
+        expect(fake.requests[1]!.body).toEqual({ threadId: 'thread-1', replyId: 'reply-1', rating: 'down' })
+
+        await user.click(within(form).getByRole('radio', { name: 'Wrong answer' }))
+        await user.type(within(form).getByRole('textbox', { name: 'Tell us more' }), 'That mug is out of stock.')
+        await user.click(within(form).getByRole('button', { name: 'Send' }))
+        expect(await within(lastAssistant()).findByText('Thanks for the feedback.')).toBeInTheDocument()
+        expect(screen.queryByRole('form', { name: 'What went wrong?' })).toBeNull()
+        expect(fake.requests[2]!.body).toEqual({
+            threadId: 'thread-1',
+            replyId: 'reply-1',
+            rating: 'down',
+            reason: 'wrong_answer',
+            comment: 'That mug is out of stock.'
+        })
+    })
+
+    it('keeps a card number in the comment in the browser', async () => {
+        const fake = fakeFetch(answered('reply-1'), ok)
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = await openAndSend('mugs?')
+        await user.click(await within(lastAssistant()).findByRole('button', { name: 'Not helpful' }))
+        const form = await screen.findByRole('form', { name: 'What went wrong?' })
+        await user.type(within(form).getByRole('textbox', { name: 'Tell us more' }), 'charge 4242 4242 4242 4242')
+        await user.click(within(form).getByRole('button', { name: 'Send' }))
+        expect(await within(form).findByText(/don't share card numbers or passwords/)).toBeInTheDocument()
+        expect(fake.requests).toHaveLength(2)
+    })
+
+    it('a failed send offers Retry and never blocks the chat', async () => {
+        const fake = fakeFetch(
+            answered('reply-1'),
+            () => jsonResponse(500, { status: 'error', message: 'oops' }),
+            ok,
+            () => streamingResponse([sse('token', { text: 'Still here.' }), sse('done', { threadId: 'thread-1', replyId: 'reply-2' })])
+        )
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = await openAndSend('mugs?')
+        await user.click(await within(lastAssistant()).findByRole('button', { name: 'Helpful' }))
+        expect(await screen.findByText("Couldn't send your feedback.")).toBeInTheDocument()
+        await user.click(screen.getByRole('button', { name: 'Retry' }))
+        expect(await screen.findByText('Thanks for the feedback.')).toBeInTheDocument()
+        expect(fake.requests[2]!.body).toEqual({ threadId: 'thread-1', replyId: 'reply-1', rating: 'up' })
+
+        await user.type(screen.getByRole('textbox', { name: 'Message the shopping assistant' }), 'still there?{Enter}')
+        expect(await screen.findByText('Still here.')).toBeInTheDocument()
+    })
+})

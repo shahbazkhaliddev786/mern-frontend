@@ -3,8 +3,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { setTokens, updateUser } from '@/features/authentication/slices/auth-slice'
 import { profileService } from '@/features/users/services/profile.service'
 import { useAppDispatch, useAppSelector } from '@/shared/store/hooks'
-import { ChatFailure, FAILURE_MESSAGES, streamChat, uploadAvatar, type StreamChatOptions } from '../services/agent-chat.service'
-import type { Attachment, ChatMessage, Confirmation } from '../types'
+import { ChatFailure, FAILURE_MESSAGES, sendFeedback, streamChat, uploadAvatar, type StreamChatOptions } from '../services/agent-chat.service'
+import type { Attachment, ChatMessage, Confirmation, Feedback, FeedbackReason } from '../types'
 
 // The visible conversation survives a reload (spec 007). The server keeps the real memory;
 // this is display only, saved per user so another account on the same browser starts fresh.
@@ -37,13 +37,14 @@ type Action =
     | { type: 'send'; user: ChatMessage; assistant: ChatMessage }
     | { type: 'token'; text: string }
     | { type: 'tool'; tool: ChatState['tool'] }
-    | { type: 'done'; threadId: string }
+    | { type: 'done'; threadId: string; replyId?: string }
     | { type: 'fail'; error: NonNullable<ChatMessage['error']> }
     | { type: 'stopped' }
     | { type: 'removeTurn'; assistantId: string }
     | { type: 'confirm'; confirmation: Confirmation }
     | { type: 'answer'; messageId: string; approved: boolean; assistant: ChatMessage }
     | { type: 'reopen'; messageId: string }
+    | { type: 'feedback'; messageId: string; feedback: Feedback }
     | { type: 'reset' }
 
 const empty: ChatState = { threadId: null, messages: [], streaming: false, tool: null }
@@ -67,7 +68,9 @@ function reducer(state: ChatState, action: Action): ChatState {
                 streaming: false,
                 tool: null,
                 threadId: action.threadId,
-                messages: updateLast(state.messages, (m) => (m.status === 'streaming' ? { ...m, status: 'done' } : m))
+                messages: updateLast(state.messages, (m) =>
+                    m.status === 'streaming' ? { ...m, status: 'done', ...(action.replyId ? { replyId: action.replyId } : {}) } : m
+                )
             }
         case 'fail':
             return {
@@ -108,6 +111,8 @@ function reducer(state: ChatState, action: Action): ChatState {
                     m.id === action.messageId && m.confirmation ? { ...m, confirmation: { ...m.confirmation, state: 'pending' as const } } : m
                 )
             }
+        case 'feedback':
+            return { ...state, messages: state.messages.map((m) => (m.id === action.messageId ? { ...m, feedback: action.feedback } : m)) }
         case 'reset':
             return { ...empty }
     }
@@ -131,7 +136,11 @@ function loadSaved(userKey: string | null): SavedChat {
         const raw = localStorage.getItem(storageKey(userKey))
         if (!raw) return { threadId: null, messages: [] }
         const saved = JSON.parse(raw) as SavedChat
-        return { threadId: saved.threadId ?? null, messages: Array.isArray(saved.messages) ? saved.messages : [] }
+        // Feedback still sending when the page closed may never have arrived: offer to send it again.
+        const messages = (Array.isArray(saved.messages) ? saved.messages : []).map((m) =>
+            m.feedback?.state === 'sending' ? { ...m, feedback: { ...m.feedback, state: 'failed' as const } } : m
+        )
+        return { threadId: saved.threadId ?? null, messages }
     } catch {
         return { threadId: null, messages: [] }
     }
@@ -205,7 +214,8 @@ export function useAgentChat() {
                         if (PROFILE_TOOLS.has(event.data.tool) && event.data.ok) void refreshProfile()
                     } else if (event.event === 'confirm_required') dispatch({ type: 'confirm', confirmation: { ...event.data, state: 'pending' } })
                     else if (event.event === 'error') dispatch({ type: 'fail', error: event.data })
-                    else if (event.event === 'done') dispatch({ type: 'done', threadId: event.data.threadId })
+                    else if (event.event === 'done')
+                        dispatch({ type: 'done', threadId: event.data.threadId, ...(event.data.replyId ? { replyId: event.data.replyId } : {}) })
                 }
                 return null
             } catch (error) {
@@ -318,6 +328,34 @@ export function useAgentChat() {
         [state.messages, state.streaming, state.threadId, runStream]
     )
 
+    /**
+     * Thumbs up or down on a reply (backend spec 021). A thumbs-down can follow with a reason or
+     * comment (`detail`), sent as a new vote that replaces the first. Never blocks the chat.
+     */
+    const rate = useCallback(
+        async (messageId: string, rating: Feedback['rating'], detail?: { reason?: FeedbackReason; comment?: string }) => {
+            const target = state.messages.find((m) => m.id === messageId)
+            if (!target?.replyId || !state.threadId) return
+            const vote = { rating, ...(detail?.reason ? { reason: detail.reason } : {}), ...(detail?.comment ? { comment: detail.comment } : {}) }
+            const feedback = (sendState: Feedback['state']): Feedback => ({
+                ...vote,
+                state: sendState,
+                ...(detail || rating === 'up' ? { detailSent: true } : {})
+            })
+            dispatch({ type: 'feedback', messageId, feedback: feedback('sending') })
+            try {
+                await sendFeedback(
+                    { threadId: state.threadId, replyId: target.replyId, ...vote },
+                    { onTokensRefreshed: (tokens) => dispatchApp(setTokens(tokens)) }
+                )
+                dispatch({ type: 'feedback', messageId, feedback: feedback('sent') })
+            } catch {
+                dispatch({ type: 'feedback', messageId, feedback: feedback('failed') })
+            }
+        },
+        [state.messages, state.threadId, dispatchApp]
+    )
+
     const stop = useCallback(() => abortRef.current?.abort(), [])
 
     const retry = useCallback(
@@ -348,6 +386,7 @@ export function useAgentChat() {
         removeAttachment,
         send,
         respond,
+        rate,
         stop,
         retry,
         newChat

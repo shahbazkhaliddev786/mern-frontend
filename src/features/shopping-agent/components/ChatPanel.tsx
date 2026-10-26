@@ -6,7 +6,7 @@ import Composer from './Composer'
 import MessageList from './MessageList'
 
 export default function ChatPanel({ onNavigate }: { onNavigate?: () => void }) {
-    const { messages, streaming, tool, pendingConfirmation, attachment, attach, removeAttachment, send, respond, stop, retry, newChat } =
+    const { messages, streaming, tool, pendingConfirmation, attachment, attach, removeAttachment, send, respond, rate, stop, retry, newChat } =
         useAgentChat()
     return (
         <div className="flex h-full min-h-0 flex-col">
@@ -26,6 +26,7 @@ export default function ChatPanel({ onNavigate }: { onNavigate?: () => void }) {
                 busy={streaming}
                 onRetry={retry}
                 onConfirm={(id, approved) => void respond(id, approved)}
+                onFeedback={(id, rating, detail) => void rate(id, rating, detail)}
                 {...(onNavigate ? { onNavigate } : {})}
             />
             <Composer

@@ -1,11 +1,12 @@
 // Streams one chat turn from POST /api/v1/agent/chat (backend spec 006). Reads the body with
 // fetch + ReadableStream rather than EventSource, which can't POST or send a Bearer header.
 
-import type { AgentEvent } from '../types'
+import type { AgentEvent, FeedbackReason } from '../types'
 import { createSseParser } from './sse'
 
 const CHAT_URL = '/api/v1/agent/chat'
 const AVATAR_UPLOAD_URL = '/api/v1/agent/uploads/avatar'
+const FEEDBACK_URL = '/api/v1/agent/feedback'
 const REFRESH_URL = '/api/v1/auth/refresh-token'
 
 export type ChatFailureKind = 'unavailable' | 'signin' | 'invalid' | 'limited' | 'network' | 'aborted'
@@ -186,4 +187,39 @@ export async function uploadAvatar(
     } catch {
         throw new ChatFailure('network', FAILURE_MESSAGES.network)
     }
+}
+
+export interface FeedbackBody {
+    threadId: string
+    replyId: string
+    rating: 'up' | 'down'
+    reason?: FeedbackReason
+    comment?: string
+}
+
+/** A thumbs up or down on one reply (backend spec 021). A new vote on the same reply replaces the old one. */
+export async function sendFeedback(body: FeedbackBody, { onTokensRefreshed }: Pick<StreamChatOptions, 'onTokensRefreshed'> = {}): Promise<void> {
+    const send = (token: string | null) =>
+        fetch(FEEDBACK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify(body)
+        })
+
+    let response: Response
+    try {
+        response = await send(storedToken('accessToken'))
+        if (response.status === 401) {
+            const fresh = await refreshTokens(onTokensRefreshed)
+            if (!fresh) throw new ChatFailure('signin', FAILURE_MESSAGES.signin)
+            response = await send(fresh)
+            if (response.status === 401) throw new ChatFailure('signin', FAILURE_MESSAGES.signin)
+        }
+    } catch (error) {
+        if (error instanceof ChatFailure) throw error
+        throw new ChatFailure('network', FAILURE_MESSAGES.network)
+    }
+    if (response.status === 400) throw new ChatFailure('invalid', (await readMessage(response)) ?? "That feedback couldn't be sent.")
+    if (response.status === 429) throw new ChatFailure('limited', (await readMessage(response)) ?? FAILURE_MESSAGES.limited)
+    if (!response.ok) throw new ChatFailure('network', FAILURE_MESSAGES.network)
 }
