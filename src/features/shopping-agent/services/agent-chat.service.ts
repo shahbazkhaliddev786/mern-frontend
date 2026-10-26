@@ -42,7 +42,18 @@ export interface StreamChatOptions {
 
 const storedToken = (key: 'accessToken' | 'refreshToken') => (typeof window === 'undefined' ? null : localStorage.getItem(key))
 
-async function refreshTokens(onTokensRefreshed: StreamChatOptions['onTokensRefreshed']): Promise<string | null> {
+// Backend spec 022: the server rotates refresh tokens, so two requests refreshing at once would
+// sign the customer out. They share the refresh that's already running instead.
+let refreshing: Promise<string | null> | null = null
+
+function refreshTokens(onTokensRefreshed: StreamChatOptions['onTokensRefreshed']): Promise<string | null> {
+    refreshing ??= refreshOnce(onTokensRefreshed).finally(() => {
+        refreshing = null
+    })
+    return refreshing
+}
+
+async function refreshOnce(onTokensRefreshed: StreamChatOptions['onTokensRefreshed']): Promise<string | null> {
     const refreshToken = storedToken('refreshToken')
     if (!refreshToken) return null
     try {

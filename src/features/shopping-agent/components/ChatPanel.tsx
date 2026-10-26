@@ -1,13 +1,13 @@
 import { Plus } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { SheetDescription, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
-import { useAgentChat } from '../hooks/useAgentChat'
+import type { useAgentChat } from '../hooks/useAgentChat'
 import Composer from './Composer'
 import MessageList from './MessageList'
 
-export default function ChatPanel({ onNavigate }: { onNavigate?: () => void }) {
-    const { messages, streaming, tool, pendingConfirmation, attachment, attach, removeAttachment, send, respond, rate, stop, retry, newChat } =
-        useAgentChat()
+// The conversation lives in ChatLauncher (backend spec 022), so closing the panel doesn't cancel a reply.
+export default function ChatPanel({ chat, onNavigate }: { chat: ReturnType<typeof useAgentChat>; onNavigate?: () => void }) {
+    const { messages, streaming, tool, pendingConfirmation, attachment, attach, removeAttachment, send, respond, rate, stop, retry, newChat } = chat
     return (
         <div className="flex h-full min-h-0 flex-col">
             <SheetHeader className="border-b pr-12">
@@ -24,6 +24,7 @@ export default function ChatPanel({ onNavigate }: { onNavigate?: () => void }) {
                 messages={messages}
                 tool={tool}
                 busy={streaming}
+                retryBlocked={Boolean(pendingConfirmation)}
                 onRetry={retry}
                 onConfirm={(id, approved) => void respond(id, approved)}
                 onFeedback={(id, rating, detail) => void rate(id, rating, detail)}

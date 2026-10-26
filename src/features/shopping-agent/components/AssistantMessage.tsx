@@ -6,7 +6,16 @@ import { Link } from 'react-router-dom'
 // Only two kinds of link work: store pages (relative product links) and Stripe Checkout,
 // where the customer pays after place_order (spec 010). Anything else shows as plain text.
 // Images are never rendered.
-const isStoreLink = (href: string | undefined): href is string => Boolean(href && href.startsWith('/') && !href.startsWith('//'))
+// Backend spec 022: a store link is a plain path on this site. Anything a browser could read as
+// another host (`//x`, `/\\x`, or its encoded form `/%5Cx`) is shown as text.
+const isStoreLink = (href: string | undefined): href is string => {
+    if (!href || !href.startsWith('/') || href.startsWith('//') || /\\|%5c/i.test(href)) return false
+    try {
+        return new URL(href, window.location.origin).origin === window.location.origin
+    } catch {
+        return false
+    }
+}
 const isStripeCheckout = (href: string | undefined): href is string => Boolean(href && href.startsWith('https://checkout.stripe.com/'))
 
 export default function AssistantMessage({ text, onNavigate }: { text: string; onNavigate?: () => void }) {

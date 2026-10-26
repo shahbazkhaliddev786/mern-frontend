@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ChatFailure, streamChat, uploadAvatar } from '../services/agent-chat.service'
+import { ChatFailure, sendFeedback, streamChat, uploadAvatar } from '../services/agent-chat.service'
 import { fakeFetch, jsonResponse, sse, streamingResponse } from './fake-stream'
 
 const collect = async (gen: AsyncGenerator<unknown>) => {
@@ -119,5 +119,27 @@ describe('uploadAvatar (spec 012)', () => {
     it('maps 503 to unavailable', async () => {
         vi.stubGlobal('fetch', fakeFetch(() => jsonResponse(503, {})).fn)
         await expect(uploadAvatar(file)).rejects.toMatchObject({ kind: 'unavailable' })
+    })
+})
+
+describe('one login refresh at a time (backend spec 022)', () => {
+    it('two requests that hit 401 together share one refresh, and both go through', async () => {
+        // The backend rotates refresh tokens: a second refresh with the same old token is refused.
+        let refreshes = 0
+        vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+            const url = String(input)
+            if (url.endsWith('/refresh-token')) {
+                refreshes += 1
+                await new Promise((resolve) => setTimeout(resolve, 10))
+                return refreshes === 1
+                    ? jsonResponse(200, { data: { accessToken: 'new-access', refreshToken: 'new-refresh' } })
+                    : jsonResponse(401, { message: 'Invalid refresh token' })
+            }
+            if (new Headers(init?.headers).get('Authorization') !== 'Bearer new-access') return jsonResponse(401, { message: 'expired' })
+            return url.endsWith('/feedback') ? jsonResponse(200, { status: 'success' }) : streamingResponse([sse('done', { threadId: 't1' })])
+        })
+        const [events] = await Promise.all([collect(streamChat({ message: 'hi' })), sendFeedback({ threadId: 't1', replyId: 'r1', rating: 'up' })])
+        expect(events).toEqual([{ event: 'done', data: { threadId: 't1' } }])
+        expect(refreshes).toBe(1)
     })
 })

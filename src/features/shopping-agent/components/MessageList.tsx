@@ -16,10 +16,12 @@ interface MessageListProps {
     onFeedback?: (assistantId: string, rating: Feedback['rating'], detail?: { reason?: FeedbackReason; comment?: string }) => void
     /** True while a reply streams: confirmation buttons wait for it. */
     busy: boolean
+    /** True while a confirmation waits: "Try again" would be refused (backend spec 022). */
+    retryBlocked?: boolean
     onNavigate?: () => void
 }
 
-export default function MessageList({ messages, tool, onRetry, onConfirm, onFeedback, busy, onNavigate }: MessageListProps) {
+export default function MessageList({ messages, tool, onRetry, onConfirm, onFeedback, busy, retryBlocked = false, onNavigate }: MessageListProps) {
     const endRef = useRef<HTMLDivElement>(null)
     const last = messages.at(-1)
     useEffect(() => {
@@ -90,7 +92,8 @@ export default function MessageList({ messages, tool, onRetry, onConfirm, onFeed
                                     <button
                                         type="button"
                                         onClick={() => onRetry(message.id)}
-                                        className="text-primary inline-flex items-center gap-1 text-sm font-medium underline-offset-2 hover:underline">
+                                        disabled={busy || retryBlocked}
+                                        className="text-primary inline-flex items-center gap-1 text-sm font-medium underline-offset-2 hover:underline disabled:pointer-events-none disabled:opacity-50">
                                         <RotateCcw className="size-3" aria-hidden />
                                         Try again
                                     </button>

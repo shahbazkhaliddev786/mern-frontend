@@ -232,6 +232,23 @@ describe('rendering safety', () => {
         expect(message).toHaveTextContent('Win a prize')
     })
 
+    it('shows links that would leave the store as text, however they are disguised (backend spec 022)', async () => {
+        const answer = '[a](/\\evil.example) [b](//evil.example) [c](/%5Cevil.example) [d](/%5cevil.example) [Shoes](/products/abc)'
+        vi.stubGlobal('fetch', fakeFetch(() => streamingResponse([sse('token', { text: answer }), sse('done', { threadId: 't' })])).fn)
+        renderLauncher(alice)
+        await openAndSend('hi')
+        const message = await waitFor(() => {
+            const m = lastAssistant()
+            expect(m).toHaveTextContent('Shoes')
+            return m
+        })
+        expect(
+            within(message)
+                .getAllByRole('link')
+                .map((link) => link.getAttribute('href'))
+        ).toEqual(['/products/abc'])
+    })
+
     it('links Stripe Checkout in a new tab, and nothing that only looks like it', async () => {
         const answer = '[Pay securely](https://checkout.stripe.com/c/pay/cs_test_1) or [this](https://checkout.stripe.com.evil.example/x)'
         vi.stubGlobal('fetch', fakeFetch(() => streamingResponse([sse('token', { text: answer }), sse('done', { threadId: 't' })])).fn)
@@ -718,5 +735,153 @@ describe('rating a reply (backend spec 021)', () => {
 
         await user.type(screen.getByRole('textbox', { name: 'Message the shopping assistant' }), 'still there?{Enter}')
         expect(await screen.findByText('Still here.')).toBeInTheDocument()
+    })
+})
+
+describe('"Try again" never loses or repeats anything (backend spec 022)', () => {
+    const dropped = "The connection dropped after I'd started. Check your cart or orders before asking again."
+
+    it('(a) is disabled while another reply streams, and the question stays', async () => {
+        const fake = fakeFetch(
+            () => streamingResponse([sse('token', { text: 'Half' })]),
+            (init) => streamingResponse([sse('token', { text: 'Working on it' })], { hang: true, signal: init?.signal ?? null })
+        )
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = await openAndSend('first question')
+        const retry = await screen.findByRole('button', { name: 'Try again' })
+        await user.type(screen.getByRole('textbox', { name: 'Message the shopping assistant' }), 'second question{Enter}')
+        await screen.findByText('Working on it')
+        expect(retry).toBeDisabled()
+        await user.click(retry)
+        expect(screen.getByText('first question')).toBeInTheDocument()
+        expect(fake.requests).toHaveLength(2)
+    })
+
+    it('(b) is not offered when the stream dropped after an action ran', async () => {
+        vi.stubGlobal(
+            'fetch',
+            fakeFetch(() =>
+                streamingResponse([
+                    sse('tool_start', { tool: 'add_to_cart', label: 'Adding to your cart…' }),
+                    sse('tool_end', { tool: 'add_to_cart', ok: true }),
+                    sse('token', { text: 'Added' })
+                ])
+            ).fn
+        )
+        renderLauncher(alice)
+        await openAndSend('add the red shoes')
+        expect(await screen.findByText(dropped)).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
+    })
+
+    it('(b) nor after a server error that came after an action ran', async () => {
+        vi.stubGlobal(
+            'fetch',
+            fakeFetch(() =>
+                streamingResponse([
+                    sse('tool_start', { tool: 'add_to_cart', label: 'Adding to your cart…' }),
+                    sse('tool_end', { tool: 'add_to_cart', ok: true }),
+                    sse('error', { message: 'The assistant is busy right now.', retryable: true }),
+                    sse('done', { threadId: 't' })
+                ])
+            ).fn
+        )
+        renderLauncher(alice)
+        await openAndSend('add the red shoes')
+        expect(await screen.findByText('The assistant is busy right now.')).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
+    })
+
+    const pause = () =>
+        streamingResponse([
+            sse('confirm_required', { interruptId: 'int-1', tool: 'clear_cart', summary: 'Remove all 2 items ($90.00) from your cart?' }),
+            sse('done', { threadId: 'thread-c' })
+        ])
+
+    it('(c) keeps the card answered when the answer reached the server and the stream then dropped', async () => {
+        vi.stubGlobal(
+            'fetch',
+            fakeFetch(pause, () => streamingResponse([sse('tool_start', { tool: 'clear_cart', label: 'Clearing your cart…' })])).fn
+        )
+        renderLauncher(alice)
+        const user = await openAndSend('empty my cart')
+        const card = await screen.findByRole('group', { name: 'Confirm this action' })
+        await user.click(within(card).getByRole('button', { name: 'Confirm' }))
+        expect(await screen.findByText('The connection dropped before I could finish. Ask me whether it went through.')).toBeInTheDocument()
+        expect(card).toHaveTextContent('Confirmed')
+        expect(within(card).queryByRole('button')).toBeNull()
+    })
+
+    it('(c) keeps the card answered after Stop', async () => {
+        vi.stubGlobal(
+            'fetch',
+            fakeFetch(pause, (init) =>
+                streamingResponse([sse('tool_start', { tool: 'clear_cart', label: 'Clearing your cart…' })], {
+                    hang: true,
+                    signal: init?.signal ?? null
+                })
+            ).fn
+        )
+        renderLauncher(alice)
+        const user = await openAndSend('empty my cart')
+        const card = await screen.findByRole('group', { name: 'Confirm this action' })
+        await user.click(within(card).getByRole('button', { name: 'Confirm' }))
+        await user.click(await screen.findByRole('button', { name: 'Stop' }))
+        expect(await screen.findByText('Stopped.')).toBeInTheDocument()
+        expect(card).toHaveTextContent('Confirmed')
+        expect(within(card).queryByRole('button')).toBeNull()
+    })
+
+    it('(d) offers no dead Try again after a server error on a confirmation answer', async () => {
+        vi.stubGlobal(
+            'fetch',
+            fakeFetch(pause, () =>
+                streamingResponse([
+                    sse('error', { message: 'The assistant is busy right now.', retryable: true }),
+                    sse('done', { threadId: 'thread-c' })
+                ])
+            ).fn
+        )
+        renderLauncher(alice)
+        const user = await openAndSend('empty my cart')
+        const card = await screen.findByRole('group', { name: 'Confirm this action' })
+        await user.click(within(card).getByRole('button', { name: 'Confirm' }))
+        expect(await screen.findByText('The assistant is busy right now.')).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
+    })
+})
+
+describe('closing the panel (backend spec 022)', () => {
+    it('does not cancel the reply: reopening shows it in full', async () => {
+        let release: () => void = () => {}
+        let aborted = false
+        const fake = fakeFetch((init) => {
+            init?.signal?.addEventListener('abort', () => (aborted = true))
+            const encoder = new TextEncoder()
+            return new Response(
+                new ReadableStream<Uint8Array>({
+                    start(controller) {
+                        controller.enqueue(encoder.encode(sse('token', { text: 'Looking at your cart… ' })))
+                        release = () => {
+                            controller.enqueue(encoder.encode(sse('token', { text: 'You have 2 items.' })))
+                            controller.enqueue(encoder.encode(sse('done', { threadId: 'thread-1', replyId: 'r1' })))
+                            controller.close()
+                        }
+                    }
+                }),
+                { status: 200, headers: { 'Content-Type': 'text/event-stream' } }
+            )
+        })
+        vi.stubGlobal('fetch', fake.fn)
+        renderLauncher(alice)
+        const user = await openAndSend("what's in my cart?")
+        await screen.findByText(/Looking at your cart/)
+        await user.keyboard('{Escape}')
+        await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Message the shopping assistant' })).toBeNull())
+        release()
+        await user.click(screen.getByRole('button', { name: 'Open the shopping assistant' }))
+        expect(await screen.findByText('Looking at your cart… You have 2 items.')).toBeInTheDocument()
+        expect(aborted).toBe(false)
     })
 })

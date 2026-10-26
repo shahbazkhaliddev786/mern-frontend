@@ -5,6 +5,7 @@ import { isAgentEnabled } from '@/shared/config/env'
 import { useAppSelector } from '@/shared/store/hooks'
 import { Button } from '@/shared/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
+import { useAgentChat } from '../hooks/useAgentChat'
 import ChatPanel from './ChatPanel'
 
 const isSmallScreen = () => typeof window !== 'undefined' && window.matchMedia?.('(max-width: 640px)').matches
@@ -14,6 +15,8 @@ const isSmallScreen = () => typeof window !== 'undefined' && window.matchMedia?.
 export default function ChatLauncher() {
     const [open, setOpen] = useState(false)
     const { isAuthenticated } = useAppSelector((state) => state.auth)
+    // Kept here, outside the Sheet, so a reply keeps streaming while the panel is closed (backend spec 022).
+    const chat = useAgentChat()
     if (!isAgentEnabled()) return null
 
     // On a phone the panel covers the page, so following a product link closes it.
@@ -33,7 +36,7 @@ export default function ChatLauncher() {
             </Button>
             <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-[420px]">
                 {isAuthenticated ? (
-                    <ChatPanel onNavigate={onNavigate} />
+                    <ChatPanel chat={chat} onNavigate={onNavigate} />
                 ) : (
                     <SheetHeader className="p-6">
                         <SheetTitle>Shopping assistant</SheetTitle>

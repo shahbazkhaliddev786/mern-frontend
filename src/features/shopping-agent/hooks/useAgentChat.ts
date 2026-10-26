@@ -148,6 +148,11 @@ function loadSaved(userKey: string | null): SavedChat {
 
 const PROFILE_TOOLS = new Set(['update_profile', 'upload_avatar'])
 
+// Backend spec 022: once an action ran, or a confirmation answer reached the server, resending
+// could repeat it, so the customer is told to check instead of being offered "Try again".
+export const DROPPED_AFTER_ACTION = "The connection dropped after I'd started. Check your cart or orders before asking again."
+export const RESUME_UNKNOWN = 'The connection dropped before I could finish. Ask me whether it went through.'
+
 let idCounter = 0
 const newId = () => `m${Date.now().toString(36)}${(idCounter += 1).toString(36)}`
 
@@ -200,6 +205,9 @@ export function useAgentChat() {
         async (request: Pick<StreamChatOptions, 'message' | 'uploadId' | 'resume'>, threadId: string | null) => {
             const abort = new AbortController()
             abortRef.current = abort
+            // What the server had already done when a failure came (backend spec 022).
+            let sawEvent = false
+            let sawToolEnd = false
             try {
                 for await (const event of streamChat({
                     ...request,
@@ -207,13 +215,16 @@ export function useAgentChat() {
                     signal: abort.signal,
                     onTokensRefreshed: (tokens) => dispatchApp(setTokens(tokens))
                 })) {
+                    sawEvent = true
+                    if (event.event === 'tool_end') sawToolEnd = true
                     if (event.event === 'token') dispatch({ type: 'token', text: event.data.text })
                     else if (event.event === 'tool_start') dispatch({ type: 'tool', tool: event.data })
                     else if (event.event === 'tool_end') {
                         dispatch({ type: 'tool', tool: null })
                         if (PROFILE_TOOLS.has(event.data.tool) && event.data.ok) void refreshProfile()
                     } else if (event.event === 'confirm_required') dispatch({ type: 'confirm', confirmation: { ...event.data, state: 'pending' } })
-                    else if (event.event === 'error') dispatch({ type: 'fail', error: event.data })
+                    else if (event.event === 'error')
+                        dispatch({ type: 'fail', error: { ...event.data, retryable: event.data.retryable && !request.resume && !sawToolEnd } })
                     else if (event.event === 'done')
                         dispatch({ type: 'done', threadId: event.data.threadId, ...(event.data.replyId ? { replyId: event.data.replyId } : {}) })
                 }
@@ -225,6 +236,12 @@ export function useAgentChat() {
                 }
                 // "Try again" resends a question; a failed confirmation is answered again on its card instead.
                 const canRetry = !request.resume
+                // The stream dropped after the server had started: resending could repeat an action.
+                if (sawEvent && (!(error instanceof ChatFailure) || error.kind === 'network')) {
+                    const message = request.resume ? RESUME_UNKNOWN : sawToolEnd ? DROPPED_AFTER_ACTION : FAILURE_MESSAGES.network
+                    dispatch({ type: 'fail', error: { message, retryable: canRetry && !sawToolEnd } })
+                    return 'interrupted'
+                }
                 if (error instanceof ChatFailure) {
                     dispatch({
                         type: 'fail',
@@ -323,7 +340,9 @@ export function useAgentChat() {
             dispatch({ type: 'answer', messageId, approved, assistant: { id: newId(), role: 'assistant', text: '', status: 'streaming' } })
             const failure = await runStream({ resume: { interruptId: confirmation.interruptId, approved } }, state.threadId)
             // Never reached the server: let the customer answer again (the server would refuse a duplicate).
-            if (failure && failure !== 'invalid') dispatch({ type: 'reopen', messageId })
+            // After Stop, or a drop once the server had answered, it may have gone through: the card
+            // stays answered (backend spec 022).
+            if (failure && failure !== 'invalid' && failure !== 'aborted' && failure !== 'interrupted') dispatch({ type: 'reopen', messageId })
         },
         [state.messages, state.streaming, state.threadId, runStream]
     )
@@ -360,13 +379,15 @@ export function useAgentChat() {
 
     const retry = useCallback(
         (assistantId: string) => {
+            // Removing the turn only to have send() refuse would lose the question (backend spec 022).
+            if (state.streaming || pendingConfirmation) return
             const index = state.messages.findIndex((m) => m.id === assistantId)
             const question = state.messages[index - 1]
             if (!question || question.role !== 'user') return
             dispatch({ type: 'removeTurn', assistantId })
             void send(question.text, question.attachment)
         },
-        [state.messages, send]
+        [state.messages, state.streaming, pendingConfirmation, send]
     )
 
     const newChat = useCallback(() => {
